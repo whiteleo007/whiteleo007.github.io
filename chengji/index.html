@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安阳学区学业质量检测分析看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+:root {
+  --ink: #0f1923;
+  --ink-2: #243447;
+  --ink-3: #3d5166;
+  --mist: #8fa4b8;
+  --silver: #c5d3de;
+  --frost: #e8eff5;
+  --paper: #f4f7fa;
+  --white: #ffffff;
+  --gold: #c8922a;
+  --gold-light: #f0d080;
+  --teal: #2a7c8a;
+  --teal-light: #6ec6d4;
+  --rose: #c44a4a;
+  --rose-light: #e88888;
+  --sage: #4a7c5a;
+  --sage-light: #88c4a0;
+  --amber: #b86020;
+  --shadow-sm: 0 2px 8px rgba(15,25,35,0.08);
+  --shadow-md: 0 6px 24px rgba(15,25,35,0.12);
+  --shadow-lg: 0 16px 48px rgba(15,25,35,0.16);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--ink);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 3px solid var(--gold);
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-seal {
+  width: 44px; height: 44px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.header-title {
+  font-family: 'Noto Serif SC', serif;
+  color: var(--white);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.header-sub {
+  color: var(--mist);
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-top: 2px;
+  font-family: 'DM Mono', monospace;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+/* ── UPLOAD ZONE ── */
+.upload-section {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
+  padding: 32px 40px;
+  border-bottom: 1px solid rgba(200,146,42,0.3);
+}
+.upload-title {
+  color: var(--gold);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.upload-title::before {
+  content: '';
+  display: block;
+  width: 20px; height: 2px;
+  background: var(--gold);
+}
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.upload-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px dashed rgba(200,146,42,0.4);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.upload-card:hover {
+  border-color: var(--gold);
+  background: rgba(200,146,42,0.08);
+  transform: translateY(-2px);
+}
+.upload-card.loaded {
+  border-color: var(--sage-light);
+  border-style: solid;
+  background: rgba(74,124,90,0.12);
+}
+.upload-card input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-label {
+  color: var(--mist);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.upload-label strong { color: var(--gold); display: block; font-size: 15px; margin-bottom: 4px; }
+.upload-status {
+  color: var(--sage-light);
+  font-size: 11px;
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+}
+.upload-btn {
+  margin-top: 20px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  padding: 10px 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.upload-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+.upload-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── FILTERS BAR ── */
+.filters-bar {
+  background: var(--white);
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--frost);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-label {
+  font-size: 12px;
+  color: var(--mist);
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1.5px solid var(--silver);
+  color: var(--ink-3);
+  background: transparent;
+  transition: all 0.2s;
+  font-family: 'Noto Sans SC', sans-serif;
+  letter-spacing: 0.5px;
+}
+.chip:hover { border-color: var(--teal); color: var(--teal); }
+.chip.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+  font-weight: 500;
+}
+
+/* ── MAIN CONTENT ── */
+.main { padding: 32px 40px; }
+
+/* ── SECTION HEADERS ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--frost);
+}
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  font-weight: 500;
+}
+.section-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 1px;
+}
+.section-desc {
+  font-size: 12px;
+  color: var(--mist);
+  letter-spacing: 0.5px;
+}
+
+/* ── LAYER 1: KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--teal);
+  transition: box-shadow 0.2s;
+}
+.kpi-card:hover { box-shadow: var(--shadow-md); }
+.kpi-card.gold { border-color: var(--gold); }
+.kpi-card.rose { border-color: var(--rose); }
+.kpi-card.sage { border-color: var(--sage); }
+.kpi-label {
+  font-size: 11px;
+  color: var(--mist);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1;
+}
+.kpi-sub {
+  font-size: 12px;
+  color: var(--mist);
+  margin-top: 6px;
+}
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+.kpi-delta.up { background: rgba(74,124,90,0.12); color: var(--sage); }
+.kpi-delta.down { background: rgba(196,74,74,0.12); color: var(--rose); }
+
+/* ── CHART CARDS ── */
+.chart-row {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.chart-row.col-2 { grid-template-columns: 1fr 1fr; }
+.chart-row.col-3 { grid-template-columns: 2fr 1fr; }
+.chart-row.col-1 { grid-template-columns: 1fr; }
+
+.chart-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.chart-card:hover { box-shadow: var(--shadow-md); }
+.chart-header {
+  padding: 18px 24px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--frost);
+}
+.chart-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+}
+.chart-hint {
+  font-size: 11px;
+  color: var(--mist);
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+.chart-body { padding: 20px 24px; position: relative; }
+.chart-body canvas { max-width: 100%; }
+
+/* ── HEATMAP ── */
+.heatmap-wrap { padding: 20px 24px; overflow-x: auto; }
+.heatmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.heatmap-table th {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.5px;
+  text-align: center;
+  background: var(--paper);
+  border-bottom: 2px solid var(--frost);
+  font-size: 11px;
+}
+.heatmap-table th.school-col { text-align: left; min-width: 110px; }
+.heatmap-table td {
+  padding: 7px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--frost);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  transition: opacity 0.2s;
+}
+.heatmap-table td.school-name {
+  text-align: left;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  padding-left: 0;
+}
+.heatmap-table tr:hover td { filter: brightness(0.92); }
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--mist);
+}
+.legend-bar {
+  height: 10px; width: 200px;
+  background: linear-gradient(to right, #e8f4ff, #1a5fa8);
+  border-radius: 4px;
+}
+
+/* ── SCATTER ── */
+.scatter-controls {
+  display: flex; gap: 8px; align-items: center;
+}
+.scatter-select {
+  padding: 4px 10px;
+  border: 1.5px solid var(--silver);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--white);
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* ── DRILL DOWN ── */
+.drill-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.school-list {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.school-list-header {
+  padding: 16px 20px;
+  background: var(--ink);
+  color: var(--gold);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.school-list-body { padding: 8px 0; max-height: 420px; overflow-y: auto; }
+.school-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.school-item:hover { background: var(--frost); }
+.school-item.active {
+  background: rgba(42,124,138,0.08);
+  border-left-color: var(--teal);
+}
+.school-item-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+.school-item-code {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--mist);
+  background: var(--frost);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.drill-charts { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 40px;
+  color: var(--mist);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-text { font-size: 16px; letter-spacing: 1px; }
+.empty-sub { font-size: 13px; margin-top: 8px; opacity: 0.7; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 32px; right: 32px;
+  background: var(--ink);
+  color: var(--white);
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  border-left: 4px solid var(--gold);
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,25,35,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.loading-overlay.show { opacity: 1; pointer-events: all; }
+.loading-box {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.loading-spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--frost);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--ink-3); font-size: 14px; letter-spacing: 1px; }
+
+/* ── RANK TABLE ── */
+.rank-table-wrap { padding: 20px 24px; overflow-x: auto; }
+.rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.rank-table th {
+  padding: 10px 14px;
+  background: var(--paper);
+  color: var(--ink-3);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-align: center;
+  border-bottom: 2px solid var(--frost);
+  font-weight: 600;
+}
+.rank-table th:first-child { text-align: left; }
+.rank-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--frost);
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+.rank-table td:nth-child(2) {
+  text-align: left;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+}
+.rank-table tr:hover td { background: var(--paper); }
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+.rank-badge.r1 { background: var(--gold); color: var(--ink); }
+.rank-badge.r2 { background: var(--silver); color: var(--ink); }
+.rank-badge.r3 { background: #cd8b52; color: white; }
+.rank-badge.rn { background: var(--frost); color: var(--mist); }
+.bar-mini {
+  display: flex; align-items: center; gap: 8px;
+}
+.bar-mini-track {
+  flex: 1; height: 6px;
+  background: var(--frost);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-mini-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--teal);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.semester-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--frost); }
+::-webkit-scrollbar-thumb { background: var(--silver); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mist); }
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  margin: 32px 0;
+  opacity: 0.4;
+}
+
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--frost); margin-bottom: 20px; }
+.tab {
+  padding: 10px 20px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--mist);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+.tab:hover { color: var(--teal); }
+.tab.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-seal">安阳</div>
+    <div>
+      <div class="header-title">安阳学区学业质量检测分析看板</div>
+      <div class="header-sub">YUHAI DISTRICT · ACADEMIC QUALITY MONITORING SYSTEM</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span style="color:var(--mist);font-size:12px;font-family:'DM Mono',monospace;" id="dataStatus">尚未载入数据</span>
+  </div>
+</div>
+
+<!-- UPLOAD SECTION -->
+<div class="upload-section">
+  <div class="upload-title">数据导入 — 请上传近三年学期检测数据（每个文件含四/五/六年级三个工作表）</div>
+  <div class="upload-grid">
+    <div class="upload-card" id="card-0">
+      <input type="file" accept=".xls,.xlsx" onchange="handleFileUpload(0, this)">
+      <div class="upload-icon">📊</div>
+      <div class="upload-label"><strong>第一学期</strong>如：2023学年第一学期</div>
+      <div class="upload-status" id="status-0">点击选择文件</div>
+    </div>
+    <div class="upload-card" id="card-1">
+      <input type="file" accept=".xls,.xlsx" onchange="handleFileUpload(1, this)">
+      <div class="upload-icon">📊</div>
+      <div class="upload-label"><strong>第二学期</strong>如：2024学年第一学期</div>
+      <div class="upload-status" id="status-1">点击选择文件</div>
+    </div>
+    <div class="upload-card" id="card-2">
+      <input type="file" accept=".xls,.xlsx" onchange="handleFileUpload(2, this)">
+      <div class="upload-icon">📊</div>
+      <div class="upload-label"><strong>第三学期</strong>如：2025学年第一学期</div>
+      <div class="upload-status" id="status-2">点击选择文件</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;display:flex;align-items:center;gap:16px;">
+    <button class="upload-btn" id="analyzeBtn" onclick="buildDashboard()" disabled>生成分析看板</button>
+    <button class="upload-btn" style="background:rgba(255,255,255,0.1);color:var(--mist);" onclick="loadSampleData()">载入演示数据</button>
+    <span style="color:var(--mist);font-size:12px;">* 仅需上传至少一个文件即可生成，多文件自动进行趋势对比</span>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-bar" id="filtersBar" style="display:none;">
+  <div class="filter-group">
+    <span class="filter-label">年级</span>
+    <div class="filter-chips">
+      <div class="chip active" onclick="setFilter('grade','all',this)">全部</div>
+      <div class="chip" onclick="setFilter('grade','四年级',this)">四年级</div>
+      <div class="chip" onclick="setFilter('grade','五年级',this)">五年级</div>
+      <div class="chip" onclick="setFilter('grade','六年级',this)">六年级</div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">学科</span>
+    <div class="filter-chips">
+      <div class="chip active" onclick="setFilter('subject','all',this)">四科综合</div>
+      <div class="chip" onclick="setFilter('subject','语文',this)">语文</div>
+      <div class="chip" onclick="setFilter('subject','数学',this)">数学</div>
+      <div class="chip" onclick="setFilter('subject','英语',this)">英语</div>
+      <div class="chip" onclick="setFilter('subject','科学',this)">科学</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+  <div class="empty-state">
+    <div class="empty-icon">📈</div>
+    <div class="empty-text">请先上传检测数据文件</div>
+    <div class="empty-sub">支持 .xls / .xlsx 格式，标准模板包含四年级、五年级、六年级三个工作表</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">正在解析数据...</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  GLOBAL STATE
+// ══════════════════════════════════════════
+const SCHOOLS = {
+  '11':'玉海中心小学','12':'玉海第二小学','13':'虹桥路小学','14':'滨江小学',
+  '15':'解放路小学','16':'隆山实验小学','17':'红旗实验小学','18':'锦湖实验小学',
+  '19':'锦湖第二小学','20':'潘岱学校','21':'毓蒙小学','22':'东山学校',
+  '23':'东山第三小学','24':'东山第四小学','25':'上望第一小学','26':'上望第二小学',
+  '27':'广场实验小学','28':'上望第四小学','29':'上望第五小学'
+};
+const SUBJECTS = ['语文','数学','英语','科学'];
+const GRADES = ['四年级','五年级','六年级'];
+const SEM_COLORS = ['#2a7c8a','#c8922a','#c44a4a'];
+const SEM_COLORS_A = ['rgba(42,124,138,0.15)','rgba(200,146,42,0.15)','rgba(196,74,74,0.15)'];
+const SUBJ_COLORS = ['#2a7c8a','#c8922a','#4a7c5a','#7c4a7c'];
+
+let uploadedData = [null, null, null]; // up to 3 semesters
+let semesterLabels = ['','',''];
+let chartInstances = {};
+let filters = { grade: 'all', subject: 'all' };
+let selectedSchool = null;
+
+// ══════════════════════════════════════════
+//  FILE UPLOAD & PARSING
+// ══════════════════════════════════════════
+function handleFileUpload(idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoading(true);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const data = parseWorkbook(wb, file.name);
+      uploadedData[idx] = data;
+      semesterLabels[idx] = data.semester || inferSemesterLabel(file.name, idx);
+      document.getElementById('status-'+idx).textContent = '✓ ' + semesterLabels[idx];
+      document.getElementById('card-'+idx).classList.add('loaded');
+      const anyLoaded = uploadedData.some(d => d !== null);
+      document.getElementById('analyzeBtn').disabled = !anyLoaded;
+      showToast('文件已解析：' + file.name);
+    } catch(err) {
+      showToast('解析失败，请检查文件格式：' + err.message, true);
+    }
+    showLoading(false);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function inferSemesterLabel(filename, idx) {
+  const m = filename.match(/(\d{4}).*?([一二])/);
+  if (m) return m[1] + '学年第' + m[2] + '学期';
+  return ['第一学期','第二学期','第三学期'][idx];
+}
+
+function parseWorkbook(wb, filename) {
+  const records = [];
+  let semester = '';
+  const gradeSheetMap = {};
+  wb.SheetNames.forEach(name => {
+    const g = GRADES.find(g => name.includes(g.replace('年级','')));
+    if (g) gradeSheetMap[g] = name;
+  });
+
+  for (const grade of GRADES) {
+    const sheetName = gradeSheetMap[grade];
+    if (!sheetName) continue;
+    const ws = wb.Sheets[sheetName];
+    const arr = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''});
+    for (let i = 2; i < arr.length; i++) {
+      const row = arr[i];
+      if (!row[0] || row[0] === '') continue;
+      const code = String(parseInt(row[0]));
+      if (isNaN(parseInt(row[0]))) continue;
+      if (!semester && row[1]) semester = String(row[1]);
+
+      const sf = (v) => {
+        const n = parseFloat(String(v).replace(/[%％]/g,''));
+        return isNaN(n) ? null : n;
+      };
+      const fixRate = (v) => {
+        const n = sf(v);
+        if (n === null) return null;
+        return n > 1 ? n / 100 : n;
+      };
+
+      records.push({
+        school_code: code,
+        school_name: SCHOOLS[code] || String(row[3]),
+        grade,
+        subjects: {
+          '语文': { avg: sf(row[7]), pass_rate: fixRate(row[9]) },
+          '数学': { avg: sf(row[13]), pass_rate: fixRate(row[15]) },
+          '英语': { avg: sf(row[19]), pass_rate: fixRate(row[21]) },
+          '科学': { avg: sf(row[25]), pass_rate: fixRate(row[27]) }
+        },
+        total_avg: sf(row[28])
+      });
+    }
+  }
+  return { semester, records };
+}
+
+// ══════════════════════════════════════════
+//  DEMO DATA (2023学年第一学期)
+// ══════════════════════════════════════════
+function loadSampleData() {
+  const raw2023 = {"semester":"2023学年第一学期","records":[{"school_code":"11","school_name":"玉海中心小学","grade":"四年级","subjects":{"语文":{"avg":84.9,"pass_rate":0.963},"数学":{"avg":84.6,"pass_rate":0.963},"英语":{"avg":94,"pass_rate":0.981},"科学":{"avg":89,"pass_rate":1}},"total_avg":352.5},{"school_code":"13","school_name":"虹桥路小学","grade":"四年级","subjects":{"语文":{"avg":85.72,"pass_rate":0.971},"数学":{"avg":81.3,"pass_rate":0.942},"英语":{"avg":94.4,"pass_rate":0.988},"科学":{"avg":86.8,"pass_rate":0.977}},"total_avg":348.248},{"school_code":"16","school_name":"隆山实验小学","grade":"四年级","subjects":{"语文":{"avg":85.43,"pass_rate":0.985},"数学":{"avg":83.48,"pass_rate":0.977},"英语":{"avg":93.04,"pass_rate":0.977},"科学":{"avg":85.2,"pass_rate":0.954}},"total_avg":347.15},{"school_code":"21","school_name":"毓蒙小学","grade":"四年级","subjects":{"语文":{"avg":88.55,"pass_rate":0.987},"数学":{"avg":81.18,"pass_rate":0.968},"英语":{"avg":92.03,"pass_rate":0.968},"科学":{"avg":84.29,"pass_rate":0.981}},"total_avg":346.04},{"school_code":"14","school_name":"滨江小学","grade":"四年级","subjects":{"语文":{"avg":88.49,"pass_rate":0.977},"数学":{"avg":81.95,"pass_rate":0.971},"英语":{"avg":92.27,"pass_rate":0.971},"科学":{"avg":82.42,"pass_rate":0.965}},"total_avg":345.13},{"school_code":"17","school_name":"红旗实验小学","grade":"四年级","subjects":{"语文":{"avg":86.14,"pass_rate":0.967},"数学":{"avg":80.72,"pass_rate":0.927},"英语":{"avg":92.87,"pass_rate":0.976},"科学":{"avg":82.96,"pass_rate":0.947}},"total_avg":342.7},{"school_code":"27","school_name":"广场实验小学","grade":"四年级","subjects":{"语文":{"avg":85.29,"pass_rate":0.964},"数学":{"avg":79.97,"pass_rate":0.928},"英语":{"avg":93.4,"pass_rate":0.995},"科学":{"avg":80.45,"pass_rate":0.933}},"total_avg":339.12},{"school_code":"26","school_name":"上望第二小学","grade":"四年级","subjects":{"语文":{"avg":84.8,"pass_rate":0.981},"数学":{"avg":77.93,"pass_rate":0.912},"英语":{"avg":91.47,"pass_rate":0.994},"科学":{"avg":79.01,"pass_rate":0.95}},"total_avg":333.21},{"school_code":"18","school_name":"锦湖实验小学","grade":"四年级","subjects":{"语文":{"avg":85.7,"pass_rate":0.965},"数学":{"avg":77.5,"pass_rate":0.903},"英语":{"avg":86.2,"pass_rate":0.888},"科学":{"avg":83.5,"pass_rate":0.947}},"total_avg":332.9},{"school_code":"15","school_name":"解放路小学","grade":"四年级","subjects":{"语文":{"avg":81.03,"pass_rate":0.924},"数学":{"avg":75.39,"pass_rate":0.885},"英语":{"avg":88.1,"pass_rate":0.962},"科学":{"avg":81.2,"pass_rate":0.962}},"total_avg":325.73},{"school_code":"19","school_name":"锦湖第二小学","grade":"四年级","subjects":{"语文":{"avg":81.1,"pass_rate":0.913},"数学":{"avg":73.7,"pass_rate":0.87},"英语":{"avg":90.3,"pass_rate":0.978},"科学":{"avg":78.6,"pass_rate":0.957}},"total_avg":323.7},{"school_code":"23","school_name":"东山第三小学","grade":"四年级","subjects":{"语文":{"avg":84.73,"pass_rate":0.932},"数学":{"avg":75.27,"pass_rate":0.889},"英语":{"avg":81.89,"pass_rate":0.867},"科学":{"avg":75.32,"pass_rate":0.909}},"total_avg":320.6},{"school_code":"12","school_name":"玉海第二小学","grade":"四年级","subjects":{"语文":{"avg":80.95,"pass_rate":0.94},"数学":{"avg":70.3,"pass_rate":0.776},"英语":{"avg":88.9,"pass_rate":0.955},"科学":{"avg":78,"pass_rate":0.933}},"total_avg":318.2},{"school_code":"24","school_name":"东山第四小学","grade":"四年级","subjects":{"语文":{"avg":78.4,"pass_rate":0.939},"数学":{"avg":66.68,"pass_rate":0.707},"英语":{"avg":84.78,"pass_rate":0.915},"科学":{"avg":79.41,"pass_rate":0.927}},"total_avg":309.27},{"school_code":"28","school_name":"上望第四小学","grade":"四年级","subjects":{"语文":{"avg":77.24,"pass_rate":0.88},"数学":{"avg":70.76,"pass_rate":0.85},"英语":{"avg":89.71,"pass_rate":0.95},"科学":{"avg":68.31,"pass_rate":0.69}},"total_avg":305.8},{"school_code":"25","school_name":"上望第一小学","grade":"四年级","subjects":{"语文":{"avg":76.95,"pass_rate":0.786},"数学":{"avg":64.13,"pass_rate":0.67},"英语":{"avg":82.02,"pass_rate":0.83},"科学":{"avg":71.9,"pass_rate":0.784}},"total_avg":295.2},{"school_code":"22","school_name":"东山学校","grade":"四年级","subjects":{"语文":{"avg":75.64,"pass_rate":0.924},"数学":{"avg":59.26,"pass_rate":0.561},"英语":{"avg":82.61,"pass_rate":0.886},"科学":{"avg":75.44,"pass_rate":0.894}},"total_avg":292.95},{"school_code":"29","school_name":"上望第五小学","grade":"四年级","subjects":{"语文":{"avg":70.12,"pass_rate":0.786},"数学":{"avg":69.39,"pass_rate":0.795},"英语":{"avg":81.32,"pass_rate":0.917},"科学":{"avg":67.44,"pass_rate":0.75}},"total_avg":288.27},{"school_code":"20","school_name":"潘岱学校","grade":"四年级","subjects":{"语文":{"avg":74.95,"pass_rate":0.865},"数学":{"avg":64.04,"pass_rate":0.649},"英语":{"avg":76.46,"pass_rate":0.770},"科学":{"avg":67.81,"pass_rate":0.73}},"total_avg":283.31},{"school_code":"16","school_name":"隆山实验小学","grade":"五年级","subjects":{"语文":{"avg":89.31,"pass_rate":0.984},"数学":{"avg":89.73,"pass_rate":0.996},"英语":{"avg":92.56,"pass_rate":0.992},"科学":{"avg":89.82,"pass_rate":0.996}},"total_avg":361.42},{"school_code":"14","school_name":"滨江小学","grade":"五年级","subjects":{"语文":{"avg":89.34,"pass_rate":0.977},"数学":{"avg":88.48,"pass_rate":0.972},"英语":{"avg":91.98,"pass_rate":0.972},"科学":{"avg":90.42,"pass_rate":0.983}},"total_avg":360.22},{"school_code":"11","school_name":"玉海中心小学","grade":"五年级","subjects":{"语文":{"avg":86,"pass_rate":0.964},"数学":{"avg":88.5,"pass_rate":0.964},"英语":{"avg":93.4,"pass_rate":0.964},"科学":{"avg":91.7,"pass_rate":0.988}},"total_avg":359.6},{"school_code":"13","school_name":"虹桥路小学","grade":"五年级","subjects":{"语文":{"avg":88.47,"pass_rate":1},"数学":{"avg":89.2,"pass_rate":0.972},"英语":{"avg":91.3,"pass_rate":0.989},"科学":{"avg":89.02,"pass_rate":0.983}},"total_avg":357.99},{"school_code":"17","school_name":"红旗实验小学","grade":"五年级","subjects":{"语文":{"avg":89.56,"pass_rate":0.973},"数学":{"avg":87.75,"pass_rate":0.969},"英语":{"avg":91.15,"pass_rate":0.965},"科学":{"avg":88.44,"pass_rate":0.972}},"total_avg":356.9},{"school_code":"18","school_name":"锦湖实验小学","grade":"五年级","subjects":{"语文":{"avg":88.2,"pass_rate":0.96},"数学":{"avg":84,"pass_rate":0.938},"英语":{"avg":94.9,"pass_rate":0.983},"科学":{"avg":88.9,"pass_rate":0.961}},"total_avg":356},{"school_code":"21","school_name":"毓蒙小学","grade":"五年级","subjects":{"语文":{"avg":86.87,"pass_rate":0.959},"数学":{"avg":86.06,"pass_rate":0.959},"英语":{"avg":88.19,"pass_rate":0.941},"科学":{"avg":89.28,"pass_rate":0.976}},"total_avg":350.4},{"school_code":"27","school_name":"广场实验小学","grade":"五年级","subjects":{"语文":{"avg":87.69,"pass_rate":0.97},"数学":{"avg":84.87,"pass_rate":0.949},"英语":{"avg":88.57,"pass_rate":0.954},"科学":{"avg":84.11,"pass_rate":0.954}},"total_avg":345.2},{"school_code":"15","school_name":"解放路小学","grade":"五年级","subjects":{"语文":{"avg":87.2,"pass_rate":0.958},"数学":{"avg":83.92,"pass_rate":0.916},"英语":{"avg":83.08,"pass_rate":0.891},"科学":{"avg":85.22,"pass_rate":0.95}},"total_avg":339.42},{"school_code":"23","school_name":"东山第三小学","grade":"五年级","subjects":{"语文":{"avg":85.6,"pass_rate":1},"数学":{"avg":80.56,"pass_rate":0.954},"英语":{"avg":82.42,"pass_rate":1},"科学":{"avg":88.3,"pass_rate":1}},"total_avg":336.88},{"school_code":"25","school_name":"上望第一小学","grade":"五年级","subjects":{"语文":{"avg":80.83,"pass_rate":0.902},"数学":{"avg":87.09,"pass_rate":0.922},"英语":{"avg":89.67,"pass_rate":0.912},"科学":{"avg":79.27,"pass_rate":0.884}},"total_avg":336.8},{"school_code":"26","school_name":"上望第二小学","grade":"五年级","subjects":{"语文":{"avg":85.94,"pass_rate":0.99},"数学":{"avg":82.44,"pass_rate":0.903},"英语":{"avg":80.57,"pass_rate":0.898},"科学":{"avg":81.83,"pass_rate":0.947}},"total_avg":330.78},{"school_code":"28","school_name":"上望第四小学","grade":"五年级","subjects":{"语文":{"avg":79.3,"pass_rate":0.88},"数学":{"avg":77.86,"pass_rate":0.83},"英语":{"avg":85.63,"pass_rate":0.9},"科学":{"avg":87.35,"pass_rate":0.95}},"total_avg":330.1},{"school_code":"12","school_name":"玉海第二小学","grade":"五年级","subjects":{"语文":{"avg":82.47,"pass_rate":0.933},"数学":{"avg":75.39,"pass_rate":0.85},"英语":{"avg":84.78,"pass_rate":0.94},"科学":{"avg":82.61,"pass_rate":0.933}},"total_avg":325.3},{"school_code":"19","school_name":"锦湖第二小学","grade":"五年级","subjects":{"语文":{"avg":77.8,"pass_rate":0.902},"数学":{"avg":76.4,"pass_rate":0.878},"英语":{"avg":83.2,"pass_rate":0.927},"科学":{"avg":85.4,"pass_rate":0.927}},"total_avg":322.8},{"school_code":"24","school_name":"东山第四小学","grade":"五年级","subjects":{"语文":{"avg":79.6,"pass_rate":0.918},"数学":{"avg":76,"pass_rate":0.847},"英语":{"avg":81.34,"pass_rate":0.929},"科学":{"avg":80.89,"pass_rate":0.859}},"total_avg":317.83},{"school_code":"22","school_name":"东山学校","grade":"五年级","subjects":{"语文":{"avg":84.88,"pass_rate":0.984},"数学":{"avg":73.94,"pass_rate":0.919},"英语":{"avg":75.66,"pass_rate":0.843},"科学":{"avg":79.49,"pass_rate":0.89}},"total_avg":313.97},{"school_code":"29","school_name":"上望第五小学","grade":"五年级","subjects":{"语文":{"avg":76.54,"pass_rate":0.848},"数学":{"avg":76.43,"pass_rate":0.886},"英语":{"avg":77.67,"pass_rate":0.823},"科学":{"avg":81.01,"pass_rate":0.937}},"total_avg":311.6},{"school_code":"20","school_name":"潘岱学校","grade":"五年级","subjects":{"语文":{"avg":80.53,"pass_rate":0.908},"数学":{"avg":67.45,"pass_rate":0.697},"英语":{"avg":74.78,"pass_rate":0.776},"科学":{"avg":77.87,"pass_rate":0.882}},"total_avg":300.6},{"school_code":"16","school_name":"隆山实验小学","grade":"六年级","subjects":{"语文":{"avg":86.55,"pass_rate":0.981},"数学":{"avg":86.68,"pass_rate":0.867},"英语":{"avg":91.49,"pass_rate":0.957},"科学":{"avg":89.68,"pass_rate":0.976}},"total_avg":354.4},{"school_code":"11","school_name":"玉海中心小学","grade":"六年级","subjects":{"语文":{"avg":87.5,"pass_rate":0.988},"数学":{"avg":86,"pass_rate":0.954},"英语":{"avg":88.9,"pass_rate":0.977},"科学":{"avg":88.7,"pass_rate":0.983}},"total_avg":351.1},{"school_code":"17","school_name":"红旗实验小学","grade":"六年级","subjects":{"语文":{"avg":86.15,"pass_rate":0.974},"数学":{"avg":82.3,"pass_rate":0.849},"英语":{"avg":89.34,"pass_rate":0.971},"科学":{"avg":88.5,"pass_rate":0.971}},"total_avg":346.3},{"school_code":"13","school_name":"虹桥路小学","grade":"六年级","subjects":{"语文":{"avg":84.29,"pass_rate":0.966},"数学":{"avg":83.84,"pass_rate":0.892},"英语":{"avg":89.29,"pass_rate":0.943},"科学":{"avg":87.53,"pass_rate":0.972}},"total_avg":344.95},{"school_code":"27","school_name":"广场实验小学","grade":"六年级","subjects":{"语文":{"avg":87.52,"pass_rate":0.989},"数学":{"avg":80.92,"pass_rate":0.896},"英语":{"avg":87.73,"pass_rate":0.965},"科学":{"avg":87.18,"pass_rate":0.973}},"total_avg":343.4},{"school_code":"14","school_name":"滨江小学","grade":"六年级","subjects":{"语文":{"avg":86.66,"pass_rate":0.977},"数学":{"avg":81.34,"pass_rate":0.881},"英语":{"avg":87.88,"pass_rate":0.966},"科学":{"avg":86.65,"pass_rate":0.989}},"total_avg":342.53},{"school_code":"20","school_name":"潘岱学校","grade":"六年级","subjects":{"语文":{"avg":85.15,"pass_rate":0.95},"数学":{"avg":82.3,"pass_rate":0.917},"英语":{"avg":84.22,"pass_rate":0.917},"科学":{"avg":88.55,"pass_rate":1}},"total_avg":340.27},{"school_code":"21","school_name":"毓蒙小学","grade":"六年级","subjects":{"语文":{"avg":87.53,"pass_rate":0.983},"数学":{"avg":78.06,"pass_rate":0.856},"英语":{"avg":86.95,"pass_rate":0.948},"科学":{"avg":94.97,"pass_rate":0.971}},"total_avg":337.5},{"school_code":"12","school_name":"玉海第二小学","grade":"六年级","subjects":{"语文":{"avg":83.07,"pass_rate":0.96},"数学":{"avg":75.45,"pass_rate":0.803},"英语":{"avg":86.1,"pass_rate":0.931},"科学":{"avg":88.98,"pass_rate":0.977}},"total_avg":333.63},{"school_code":"25","school_name":"上望第一小学","grade":"六年级","subjects":{"语文":{"avg":85.65,"pass_rate":0.977},"数学":{"avg":81.13,"pass_rate":0.876},"英语":{"avg":81.8,"pass_rate":0.878},"科学":{"avg":83.78,"pass_rate":0.947}},"total_avg":332.4},{"school_code":"26","school_name":"上望第二小学","grade":"六年级","subjects":{"语文":{"avg":82.98,"pass_rate":0.979},"数学":{"avg":75.4,"pass_rate":0.822},"英语":{"avg":83.77,"pass_rate":0.922},"科学":{"avg":87.4,"pass_rate":0.979}},"total_avg":329.55},{"school_code":"15","school_name":"解放路小学","grade":"六年级","subjects":{"语文":{"avg":83.5,"pass_rate":0.955},"数学":{"avg":73.61,"pass_rate":0.767},"英语":{"avg":86.24,"pass_rate":0.962},"科学":{"avg":86.09,"pass_rate":0.955}},"total_avg":329.44},{"school_code":"18","school_name":"锦湖实验小学","grade":"六年级","subjects":{"语文":{"avg":85.7,"pass_rate":0.96},"数学":{"avg":78.9,"pass_rate":0.869},"英语":{"avg":83.2,"pass_rate":0.92},"科学":{"avg":80.4,"pass_rate":0.887}},"total_avg":328.2},{"school_code":"22","school_name":"东山学校","grade":"六年级","subjects":{"语文":{"avg":83.88,"pass_rate":0.976},"数学":{"avg":79.52,"pass_rate":0.872},"英语":{"avg":79.69,"pass_rate":0.884},"科学":{"avg":81.02,"pass_rate":0.957}},"total_avg":324.11},{"school_code":"19","school_name":"锦湖第二小学","grade":"六年级","subjects":{"语文":{"avg":86.2,"pass_rate":1},"数学":{"avg":68.2,"pass_rate":0.709},"英语":{"avg":75.3,"pass_rate":0.836},"科学":{"avg":83.1,"pass_rate":0.963}},"total_avg":312.8},{"school_code":"29","school_name":"上望第五小学","grade":"六年级","subjects":{"语文":{"avg":76.25,"pass_rate":0.882},"数学":{"avg":75.42,"pass_rate":0.816},"英语":{"avg":73.92,"pass_rate":0.829},"科学":{"avg":80.52,"pass_rate":0.961}},"total_avg":306.16},{"school_code":"24","school_name":"东山第四小学","grade":"六年级","subjects":{"语文":{"avg":81.84,"pass_rate":0.962},"数学":{"avg":65.95,"pass_rate":0.696},"英语":{"avg":75.38,"pass_rate":0.886},"科学":{"avg":82.05,"pass_rate":0.949}},"total_avg":305.22},{"school_code":"28","school_name":"上望第四小学","grade":"六年级","subjects":{"语文":{"avg":77.38,"pass_rate":0.93},"数学":{"avg":70.9,"pass_rate":0.69},"英语":{"avg":67.06,"pass_rate":0.75},"科学":{"avg":85.38,"pass_rate":0.96}},"total_avg":300.7},{"school_code":"23","school_name":"东山第三小学","grade":"六年级","subjects":{"语文":{"avg":85.27,"pass_rate":0.976},"数学":{"avg":63.85,"pass_rate":0.634},"英语":{"avg":69.56,"pass_rate":0.732},"科学":{"avg":78.15,"pass_rate":0.902}},"total_avg":296.83}]};
+  uploadedData[0] = raw2023;
+  semesterLabels[0] = '2023学年第一学期';
+  document.getElementById('status-0').textContent = '✓ 2023学年第一学期（演示）';
+  document.getElementById('card-0').classList.add('loaded');
+  document.getElementById('analyzeBtn').disabled = false;
+  showToast('演示数据已载入，点击"生成分析看板"开始分析');
+}
+
+// ══════════════════════════════════════════
+//  FILTER
+// ══════════════════════════════════════════
+function setFilter(key, val, el) {
+  filters[key] = val;
+  el.closest('.filter-chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  rebuildCharts();
+}
+
+// ══════════════════════════════════════════
+//  DATA HELPERS
+// ══════════════════════════════════════════
+function getFilteredRecords(semIdx) {
+  const d = uploadedData[semIdx];
+  if (!d) return [];
+  let recs = d.records;
+  if (filters.grade !== 'all') recs = recs.filter(r => r.grade === filters.grade);
+  return recs;
+}
+
+function getSchoolAvg(recs, code) {
+  const schoolRecs = recs.filter(r => r.school_code === code);
+  if (!schoolRecs.length) return null;
+  if (filters.subject === 'all') {
+    // average of all subjects across all grades
+    let sum = 0, cnt = 0;
+    schoolRecs.forEach(r => {
+      SUBJECTS.forEach(s => {
+        if (r.subjects[s]?.avg != null) { sum += r.subjects[s].avg; cnt++; }
+      });
+    });
+    return cnt ? sum / cnt : null;
+  } else {
+    let sum = 0, cnt = 0;
+    schoolRecs.forEach(r => {
+      const v = r.subjects[filters.subject]?.avg;
+      if (v != null) { sum += v; cnt++; }
+    });
+    return cnt ? sum / cnt : null;
+  }
+}
+
+function getDistrictAvg(recs) {
+  if (filters.subject === 'all') {
+    let sum = 0, cnt = 0;
+    recs.forEach(r => SUBJECTS.forEach(s => {
+      if (r.subjects[s]?.avg != null) { sum += r.subjects[s].avg; cnt++; }
+    }));
+    return cnt ? sum / cnt : null;
+  } else {
+    let sum = 0, cnt = 0;
+    recs.forEach(r => {
+      const v = r.subjects[filters.subject]?.avg;
+      if (v != null) { sum += v; cnt++; }
+    });
+    return cnt ? sum / cnt : null;
+  }
+}
+
+function getSubjectDistrictAvg(recs, subj) {
+  let sum = 0, cnt = 0;
+  recs.forEach(r => {
+    const v = r.subjects[subj]?.avg;
+    if (v != null) { sum += v; cnt++; }
+  });
+  return cnt ? +(sum / cnt).toFixed(2) : null;
+}
+
+function getSchoolSubjectAvg(recs, code, subj) {
+  const schoolRecs = recs.filter(r => r.school_code === code);
+  let sum = 0, cnt = 0;
+  schoolRecs.forEach(r => {
+    const v = r.subjects[subj]?.avg;
+    if (v != null) { sum += v; cnt++; }
+  });
+  return cnt ? +(sum / cnt).toFixed(2) : null;
+}
+
+// ══════════════════════════════════════════
+//  BUILD DASHBOARD
+// ══════════════════════════════════════════
+function buildDashboard() {
+  const loadedSems = uploadedData.filter(d => d !== null);
+  if (!loadedSems.length) { showToast('请至少上传一个学期数据', true); return; }
+
+  document.getElementById('filtersBar').style.display = 'flex';
+  document.getElementById('dataStatus').textContent =
+    uploadedData.filter(Boolean).map((_,i) => uploadedData[i] ? semesterLabels[i] : '').filter(Boolean).join(' | ');
+
+  renderDashboard();
+}
+
+function rebuildCharts() {
+  // destroy all chart instances
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  chartInstances = {};
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const semIdxs = [0,1,2].filter(i => uploadedData[i] !== null);
+  const main = document.getElementById('mainContent');
+
+  main.innerHTML = `
+    <!-- LAYER 1 -->
+    <div class="section-header">
+      <span class="section-num">01 · MACRO</span>
+      <span class="section-title">宏观趋势与学区总览</span>
+      <span class="section-desc">学区整体成绩分布与跨学期变化</span>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="chart-row col-3">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">学区平均分趋势</div><div class="chart-hint">各学期学区整体平均分变化（按年级与学科）</div></div>
+        </div>
+        <div class="chart-body" style="height:260px;"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">学科均衡度雷达</div><div class="chart-hint">学区四门学科平均水平对比</div></div>
+        </div>
+        <div class="chart-body" style="height:260px;"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- LAYER 2 -->
+    <div class="section-header">
+      <span class="section-num">02 · COMPARE</span>
+      <span class="section-title">校际对比与成绩分布</span>
+      <span class="section-desc">识别领跑学校与需关注学校</span>
+    </div>
+    <div class="chart-row col-1">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">19校综合排名竞跑图</div><div class="chart-hint">按当前筛选条件排名，多学期颜色叠加呈现竞跑态势</div></div>
+          <div id="rankTabsWrap"></div>
+        </div>
+        <div class="rank-table-wrap" id="rankTableWrap"></div>
+      </div>
+    </div>
+    <div class="chart-row col-2">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">学科成绩热力图</div><div class="chart-hint">颜色深浅反映各校各科平均分高低，快速定位短板</div></div>
+          <div>
+            <select class="scatter-select" id="heatGradeFilter" onchange="renderHeatmap()">
+              <option value="all">全年级</option>
+              <option value="四年级">四年级</option>
+              <option value="五年级">五年级</option>
+              <option value="六年级">六年级</option>
+            </select>
+            <select class="scatter-select" id="heatSemFilter" onchange="renderHeatmap()">
+              ${semIdxs.map(i => `<option value="${i}">${semesterLabels[i]}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="heatmap-wrap" id="heatmapWrap"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">学科相关性散点图</div><div class="chart-hint">发现偏科严重的学校</div></div>
+          <div class="scatter-controls">
+            <select class="scatter-select" id="scatterX" onchange="renderScatter()">
+              ${SUBJECTS.map(s=>`<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <span style="color:var(--mist);font-size:12px;">vs</span>
+            <select class="scatter-select" id="scatterY" onchange="renderScatter()">
+              ${SUBJECTS.map((s,i)=>`<option value="${s}" ${i===1?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="chart-body" style="height:340px;"><canvas id="scatterChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- LAYER 3 -->
+    <div class="section-header">
+      <span class="section-num">03 · DRILL</span>
+      <span class="section-title">单校成长轨迹追踪</span>
+      <span class="section-desc">深入分析特定学校的学科起伏与排名变化</span>
+    </div>
+    <div class="drill-grid" id="drillGrid">
+      <div class="school-list">
+        <div class="school-list-header">选择学校</div>
+        <div class="school-list-body" id="schoolListBody"></div>
+      </div>
+      <div class="drill-charts" id="drillCharts">
+        <div class="empty-state" style="padding:40px;">
+          <div class="empty-icon">👆</div>
+          <div class="empty-text">请从左侧选择学校</div>
+          <div class="empty-sub">展示该校三个学期的学科成绩变化</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderKPIs(semIdxs);
+  renderTrendChart(semIdxs);
+  renderRadarChart(semIdxs);
+  renderRankTable(semIdxs);
+  renderHeatmap();
+  renderScatter();
+  renderSchoolList(semIdxs);
+  if (selectedSchool) renderDrillCharts(semIdxs, selectedSchool);
+}
+
+// ══════════════════════════════════════════
+//  KPI CARDS
+// ══════════════════════════════════════════
+function renderKPIs(semIdxs) {
+  const latest = semIdxs[semIdxs.length - 1];
+  const prev = semIdxs.length > 1 ? semIdxs[semIdxs.length - 2] : null;
+  const recs = getFilteredRecords(latest);
+  const prevRecs = prev !== null ? getFilteredRecords(prev) : [];
+
+  const distAvg = getDistrictAvg(recs);
+  const prevAvg = prevRecs.length ? getDistrictAvg(prevRecs) : null;
+  const delta = (distAvg && prevAvg) ? (distAvg - prevAvg) : null;
+
+  // school range
+  const codes = Object.keys(SCHOOLS);
+  const avgs = codes.map(c => getSchoolAvg(recs, c)).filter(v => v !== null);
+  const maxAvg = avgs.length ? Math.max(...avgs) : null;
+  const minAvg = avgs.length ? Math.min(...avgs) : null;
+  const range = (maxAvg && minAvg) ? (maxAvg - minAvg) : null;
+
+  // pass rate
+  let passSum = 0, passCnt = 0;
+  recs.forEach(r => {
+    const subjs = filters.subject === 'all' ? SUBJECTS : [filters.subject];
+    subjs.forEach(s => {
+      const v = r.subjects[s]?.pass_rate;
+      if (v != null) { passSum += v; passCnt++; }
+    });
+  });
+  const avgPass = passCnt ? (passSum / passCnt * 100) : null;
+
+  const semLabel = semesterLabels[latest];
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">学区平均分</div>
+      <div class="kpi-value">${distAvg ? distAvg.toFixed(1) : '--'}
+        ${delta !== null ? `<span class="kpi-delta ${delta>=0?'up':'down'}">${delta>=0?'↑':'↓'}${Math.abs(delta).toFixed(1)}</span>` : ''}
+      </div>
+      <div class="kpi-sub">${semLabel} · ${filters.grade==='all'?'全年级':filters.grade}</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">学区及格率</div>
+      <div class="kpi-value">${avgPass ? avgPass.toFixed(1) + '%' : '--'}</div>
+      <div class="kpi-sub">${filters.subject==='all'?'四科综合':filters.subject}及格率均值</div>
+    </div>
+    <div class="kpi-card rose">
+      <div class="kpi-label">校际极差</div>
+      <div class="kpi-value">${range ? range.toFixed(1) : '--'}</div>
+      <div class="kpi-sub">最高 ${maxAvg?maxAvg.toFixed(1):'--'} / 最低 ${minAvg?minAvg.toFixed(1):'--'}</div>
+    </div>
+    <div class="kpi-card sage">
+      <div class="kpi-label">已载入学期数</div>
+      <div class="kpi-value">${semIdxs.length}</div>
+      <div class="kpi-sub">${semIdxs.map(i=>semesterLabels[i]).join(' · ')}</div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+//  TREND CHART
+// ══════════════════════════════════════════
+function renderTrendChart(semIdxs) {
+  const labels = semIdxs.map(i => semesterLabels[i]);
+  const datasets = [];
+
+  if (filters.grade === 'all') {
+    // overall district avg per semester
+    const vals = semIdxs.map(i => {
+      const recs = getFilteredRecords(i);
+      const v = getDistrictAvg(recs);
+      return v ? +v.toFixed(2) : null;
+    });
+    datasets.push({ label: '学区综合均分', data: vals, borderColor: SEM_COLORS[0], backgroundColor: SEM_COLORS_A[0], tension: 0.4, fill: true, pointRadius: 6, pointHoverRadius: 9 });
+    // per subject
+    SUBJECTS.forEach((subj, si) => {
+      const vals = semIdxs.map(i => {
+        const recs = getFilteredRecords(i);
+        return getSubjectDistrictAvg(recs, subj);
+      });
+      datasets.push({ label: subj, data: vals, borderColor: SUBJ_COLORS[si], tension: 0.4, pointRadius: 4, borderDash: [4,3], borderWidth: 1.5 });
+    });
+  } else {
+    const vals = semIdxs.map(i => {
+      const recs = getFilteredRecords(i);
+      const v = getDistrictAvg(recs);
+      return v ? +v.toFixed(2) : null;
+    });
+    datasets.push({ label: filters.grade + (filters.subject==='all'?'综合':filters.subject), data: vals, borderColor: SEM_COLORS[0], backgroundColor: SEM_COLORS_A[0], tension: 0.4, fill: true, pointRadius: 6 });
+  }
+
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  chartInstances.trend = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'Noto Sans SC', size: 11 }, boxWidth: 12, padding: 16 } }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 11 } } },
+        y: { min: 60, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 11 } } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  RADAR CHART
+// ══════════════════════════════════════════
+function renderRadarChart(semIdxs) {
+  const datasets = semIdxs.map((i, si) => {
+    const recs = getFilteredRecords(i);
+    return {
+      label: semesterLabels[i],
+      data: SUBJECTS.map(s => getSubjectDistrictAvg(recs, s)),
+      borderColor: SEM_COLORS[si],
+      backgroundColor: SEM_COLORS_A[si],
+      pointRadius: 4
+    };
+  });
+
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  chartInstances.radar = new Chart(ctx, {
+    type: 'radar',
+    data: { labels: SUBJECTS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'Noto Sans SC', size: 11 }, boxWidth: 12 } } },
+      scales: {
+        r: {
+          min: 60, max: 100,
+          ticks: { font: { family: 'DM Mono', size: 10 }, stepSize: 10 },
+          pointLabels: { font: { family: 'Noto Sans SC', size: 13, weight: '600' } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  RANK TABLE
+// ══════════════════════════════════════════
+function renderRankTable(semIdxs) {
+  const wrap = document.getElementById('rankTableWrap');
+  const latest = semIdxs[semIdxs.length - 1];
+  const recs = getFilteredRecords(latest);
+
+  const schoolData = Object.keys(SCHOOLS).map(code => {
+    const semAvgs = semIdxs.map(i => getSchoolAvg(getFilteredRecords(i), code));
+    const latestAvg = semAvgs[semAvgs.length - 1];
+    return { code, name: SCHOOLS[code], semAvgs, latestAvg };
+  }).filter(d => d.latestAvg !== null);
+
+  schoolData.sort((a, b) => b.latestAvg - a.latestAvg);
+
+  const maxVal = Math.max(...schoolData.map(d => d.latestAvg));
+  const minVal = Math.min(...schoolData.map(d => d.latestAvg));
+
+  let html = `<table class="rank-table">
+    <thead><tr>
+      <th>排名</th>
+      <th>学校</th>
+      <th>成绩 · 当前学期</th>
+      ${semIdxs.map(i => `<th>${semesterLabels[i]}</th>`).join('')}
+      ${semIdxs.length > 1 ? '<th>变化</th>' : ''}
+    </tr></thead><tbody>`;
+
+  schoolData.forEach((d, idx) => {
+    const rank = idx + 1;
+    const badgeCls = rank===1?'r1':rank===2?'r2':rank===3?'r3':'rn';
+    const pct = maxVal > minVal ? ((d.latestAvg - minVal) / (maxVal - minVal) * 100) : 50;
+    const delta = semIdxs.length > 1 && d.semAvgs[d.semAvgs.length-1] && d.semAvgs[d.semAvgs.length-2]
+      ? (d.semAvgs[d.semAvgs.length-1] - d.semAvgs[d.semAvgs.length-2]) : null;
+
+    html += `<tr>
+      <td><span class="rank-badge ${badgeCls}">${rank}</span></td>
+      <td>${d.name}</td>
+      <td>
+        <div class="bar-mini">
+          <div class="bar-mini-track"><div class="bar-mini-fill" style="width:${pct}%;background:${rank<=5?'var(--teal)':rank<=10?'var(--gold)':'var(--rose)'}"></div></div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-3);min-width:40px;">${d.latestAvg.toFixed(1)}</span>
+        </div>
+      </td>
+      ${d.semAvgs.map((v,si) => `<td style="color:${SEM_COLORS[si]};font-weight:500;">${v!==null?v.toFixed(1):'—'}</td>`).join('')}
+      ${semIdxs.length > 1 ? `<td style="color:${delta===null?'var(--mist)':delta>=0?'var(--sage)':'var(--rose)'};font-weight:600;">${delta===null?'—':delta>=0?'▲'+delta.toFixed(1):'▼'+Math.abs(delta).toFixed(1)}</td>` : ''}
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  HEATMAP
+// ══════════════════════════════════════════
+function renderHeatmap() {
+  const semIdx = parseInt(document.getElementById('heatSemFilter').value);
+  const gradeFilter = document.getElementById('heatGradeFilter').value;
+  let recs = uploadedData[semIdx]?.records || [];
+  if (gradeFilter !== 'all') recs = recs.filter(r => r.grade === gradeFilter);
+
+  const wrap = document.getElementById('heatmapWrap');
+
+  // compute per school per subject avg
+  const schoolAvgs = {};
+  Object.keys(SCHOOLS).forEach(code => {
+    schoolAvgs[code] = {};
+    SUBJECTS.forEach(s => {
+      const v = getSchoolSubjectAvg(recs, code, s);
+      schoolAvgs[code][s] = v;
+    });
+    // overall
+    const vals = SUBJECTS.map(s => schoolAvgs[code][s]).filter(v => v!==null);
+    schoolAvgs[code]._total = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  });
+
+  // sort by total
+  const sorted = Object.keys(SCHOOLS).filter(c => schoolAvgs[c]._total !== null)
+    .sort((a,b) => schoolAvgs[b]._total - schoolAvgs[a]._total);
+
+  // color scale per subject
+  const ranges = {};
+  SUBJECTS.forEach(s => {
+    const vals = sorted.map(c => schoolAvgs[c][s]).filter(v=>v!==null);
+    ranges[s] = { min: Math.min(...vals), max: Math.max(...vals) };
+  });
+
+  const heatColor = (val, min, max) => {
+    if (val === null) return '#f4f7fa';
+    const pct = max > min ? (val - min) / (max - min) : 0.5;
+    const r = Math.round(232 - pct * (232 - 26));
+    const g = Math.round(244 - pct * (244 - 95));
+    const b = Math.round(255 - pct * (255 - 138));
+    return `rgb(${r},${g},${b})`;
+  };
+
+  let html = `<table class="heatmap-table">
+    <thead><tr>
+      <th class="school-col">学校</th>
+      ${SUBJECTS.map(s=>`<th>${s}</th>`).join('')}
+      <th>综合均分</th>
+    </tr></thead><tbody>`;
+
+  sorted.forEach((code, idx) => {
+    const d = schoolAvgs[code];
+    html += `<tr>
+      <td class="school-name">
+        <span style="color:var(--mist);font-size:10px;font-family:'DM Mono',monospace;margin-right:8px;">${String(idx+1).padStart(2,'0')}</span>
+        ${SCHOOLS[code]}
+      </td>
+      ${SUBJECTS.map(s => `<td style="background:${heatColor(d[s],ranges[s].min,ranges[s].max)};color:var(--ink);">${d[s]!==null?d[s].toFixed(1):'—'}</td>`).join('')}
+      <td style="font-weight:600;color:var(--ink);">${d._total!==null?d._total.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+    <div class="heatmap-legend">
+      <span>低</span>
+      <div class="legend-bar" style="background:linear-gradient(to right,rgb(232,244,255),rgb(26,95,138))"></div>
+      <span>高</span>
+      <span style="margin-left:16px;">按各学科独立归一化着色</span>
+    </div>`;
+
+  wrap.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  SCATTER
+// ══════════════════════════════════════════
+function renderScatter() {
+  const xSubj = document.getElementById('scatterX').value;
+  const ySubj = document.getElementById('scatterY').value;
+  const semIdxs = [0,1,2].filter(i => uploadedData[i] !== null);
+  const latest = semIdxs[semIdxs.length-1];
+  const recs = getFilteredRecords(latest);
+
+  const points = Object.keys(SCHOOLS).map(code => {
+    const x = getSchoolSubjectAvg(recs, code, xSubj);
+    const y = getSchoolSubjectAvg(recs, code, ySubj);
+    return { x, y, label: SCHOOLS[code] };
+  }).filter(p => p.x !== null && p.y !== null);
+
+  const ctx = document.getElementById('scatterChart').getContext('2d');
+  if (chartInstances.scatter) { chartInstances.scatter.destroy(); }
+
+  chartInstances.scatter = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: `${xSubj} vs ${ySubj}`,
+        data: points,
+        backgroundColor: SEM_COLORS.map(c => c + 'cc')[0],
+        pointRadius: 8, pointHoverRadius: 11
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.raw.label}：${xSubj} ${ctx.raw.x.toFixed(1)} | ${ySubj} ${ctx.raw.y.toFixed(1)}`
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: xSubj + ' 平均分', font: { family: 'Noto Sans SC', size: 12 } }, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { family: 'DM Mono', size: 11 } } },
+        y: { title: { display: true, text: ySubj + ' 平均分', font: { family: 'Noto Sans SC', size: 12 } }, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { family: 'DM Mono', size: 11 } } }
+      }
+    },
+    plugins: [{
+      id: 'schoolLabels',
+      afterDatasetsDraw(chart) {
+        const ctx = chart.ctx;
+        chart.data.datasets[0].data.forEach((pt, i) => {
+          const meta = chart.getDatasetMeta(0);
+          if (!meta.data[i]) return;
+          const x = meta.data[i].x, y = meta.data[i].y;
+          ctx.save();
+          ctx.font = '10px Noto Sans SC';
+          ctx.fillStyle = '#243447';
+          ctx.fillText(pt.label, x + 8, y - 4);
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+// ══════════════════════════════════════════
+//  SCHOOL LIST
+// ══════════════════════════════════════════
+function renderSchoolList(semIdxs) {
+  const body = document.getElementById('schoolListBody');
+  body.innerHTML = Object.entries(SCHOOLS).map(([code, name]) => `
+    <div class="school-item ${selectedSchool===code?'active':''}" onclick="selectSchool('${code}',${JSON.stringify(semIdxs)})">
+      <span class="school-item-name">${name}</span>
+      <span class="school-item-code">${code}</span>
+    </div>
+  `).join('');
+}
+
+function selectSchool(code, semIdxs) {
+  selectedSchool = code;
+  document.querySelectorAll('.school-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  renderDrillCharts(semIdxs, code);
+}
+
+// ══════════════════════════════════════════
+//  DRILL CHARTS
+// ══════════════════════════════════════════
+function renderDrillCharts(semIdxs, code) {
+  const name = SCHOOLS[code];
+  const drillCharts = document.getElementById('drillCharts');
+
+  drillCharts.innerHTML = `
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">📍 ${name} — 四科成绩跨学期变化</div>
+          <div class="chart-hint">折线为该校各科均分；虚线为学区该科基准线</div>
+        </div>
+        <div class="filter-chips" id="drillGradeChips">
+          ${['全部','四年级','五年级','六年级'].map((g,i)=>`<div class="chip ${i===0?'active':''}" onclick="setDrillGrade('${g}',this,'${code}',${JSON.stringify(semIdxs)})">${g==='全部'?'全年级':g}</div>`).join('')}
+        </div>
+      </div>
+      <div class="chart-body" style="height:280px;"><canvas id="drillLineChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">${name} — 各学期各科与学区均值对比</div>
+          <div class="chart-hint">蓝色=该校，金色线=学区均值基准</div>
+        </div>
+      </div>
+      <div class="chart-body" style="height:240px;"><canvas id="drillBarChart"></canvas></div>
+    </div>
+  `;
+
+  renderDrillLine(semIdxs, code, 'all');
+  renderDrillBar(semIdxs, code);
+}
+
+let drillGradeFilter = 'all';
+
+function setDrillGrade(g, el, code, semIdxs) {
+  drillGradeFilter = g === '全部' ? 'all' : g;
+  el.closest('#drillGradeChips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderDrillLine(semIdxs, code, drillGradeFilter);
+}
+
+function renderDrillLine(semIdxs, code, gradeF) {
+  const labels = semIdxs.map(i => semesterLabels[i]);
+
+  const getSchoolSubjBySem = (semIdx, subj) => {
+    let recs = uploadedData[semIdx]?.records.filter(r => r.school_code === code) || [];
+    if (gradeF !== 'all') recs = recs.filter(r => r.grade === gradeF);
+    let sum=0, cnt=0;
+    recs.forEach(r => { const v=r.subjects[subj]?.avg; if(v!=null){sum+=v;cnt++;} });
+    return cnt ? +(sum/cnt).toFixed(2) : null;
+  };
+  const getDistSubjBySem = (semIdx, subj) => {
+    let recs = uploadedData[semIdx]?.records || [];
+    if (gradeF !== 'all') recs = recs.filter(r => r.grade === gradeF);
+    return getSubjectDistrictAvg(recs, subj);
+  };
+
+  const datasets = [];
+  SUBJECTS.forEach((subj, si) => {
+    datasets.push({
+      label: subj,
+      data: semIdxs.map(i => getSchoolSubjBySem(i, subj)),
+      borderColor: SUBJ_COLORS[si],
+      backgroundColor: SUBJ_COLORS[si] + '22',
+      tension: 0.4, pointRadius: 6, pointHoverRadius: 9, borderWidth: 2.5, fill: false
+    });
+    if (semIdxs.length > 1) {
+      datasets.push({
+        label: subj + '（学区均）',
+        data: semIdxs.map(i => getDistSubjBySem(i, subj)),
+        borderColor: SUBJ_COLORS[si] + '55',
+        borderDash: [6,3], pointRadius: 0, borderWidth: 1.5, fill: false, tension: 0.4
+      });
+    }
+  });
+
+  const ctx = document.getElementById('drillLineChart').getContext('2d');
+  if (chartInstances.drillLine) { chartInstances.drillLine.destroy(); }
+  chartInstances.drillLine = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Noto Sans SC', size: 11 }, boxWidth: 12, filter: item => !item.text.includes('学区均') } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 11 } } },
+        y: { min: 55, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderDrillBar(semIdxs, code) {
+  const labels = SUBJECTS;
+  const datasets = semIdxs.map((i, si) => {
+    const recs = uploadedData[i]?.records.filter(r => r.school_code === code) || [];
+    return {
+      label: semesterLabels[i],
+      data: SUBJECTS.map(s => {
+        let sum=0, cnt=0;
+        recs.forEach(r => { const v=r.subjects[s]?.avg; if(v!=null){sum+=v;cnt++;} });
+        return cnt ? +(sum/cnt).toFixed(2) : null;
+      }),
+      backgroundColor: SEM_COLORS[si] + 'cc',
+      borderColor: SEM_COLORS[si],
+      borderWidth: 1.5,
+      borderRadius: 4
+    };
+  });
+
+  // district averages (latest)
+  const latestIdx = semIdxs[semIdxs.length-1];
+  const distData = SUBJECTS.map(s => getSubjectDistrictAvg(getFilteredRecords(latestIdx), s));
+  datasets.push({
+    label: '学区均值基准',
+    data: distData,
+    type: 'line',
+    borderColor: '#c8922a',
+    borderDash: [6,3],
+    pointRadius: 5,
+    borderWidth: 2,
+    fill: false
+  });
+
+  const ctx = document.getElementById('drillBarChart').getContext('2d');
+  if (chartInstances.drillBar) { chartInstances.drillBar.destroy(); }
+  chartInstances.drillBar = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'Noto Sans SC', size: 11 }, boxWidth: 12 } }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans SC', size: 13 } } },
+        y: { min: 55, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 11 } } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function showLoading(v) {
+  document.getElementById('loadingOverlay').classList.toggle('show', v);
+}
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = isErr ? 'var(--rose)' : 'var(--gold)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
