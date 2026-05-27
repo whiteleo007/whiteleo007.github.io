@@ -1,1 +1,1060 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>瑞安市小学数学六年级监测数据多维分析可视化看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pri:#1a56db;--pri-d:#1245b5;--pri-p:#ebf0ff;
+  --cyan:#0e9f9f;--cyan-p:#e0f9f9;
+  --grn:#057a55;--grn-p:#def7ec;
+  --amb:#b45309;--amb-p:#fef3c7;
+  --red:#e02424;--red-p:#fde8e8;
+  --pur:#7e3af2;--pur-p:#edebfe;
+  --rose:#e11d48;
+  --bg:#f3f6fb;--surf:#fff;--bdr:#dde3f0;
+  --t1:#111827;--t2:#4b5672;--t3:#9ba3b8;
+}
+html{font-size:14px;font-family:'Noto Sans SC','PingFang SC',system-ui,sans-serif}
+body{background:var(--bg);color:var(--t1);min-height:100vh}
+
+.hdr{background:var(--pri);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:relative;overflow:hidden;z-index:100}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#60a5fa,#34d399,#fbbf24,#f87171)}
+.hdr-l{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.hdr-r{display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+.hdr-ico{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff}
+.hdr-ttl{font-size:14px;font-weight:700;color:#fff;letter-spacing:.5px}
+.hdr-sub{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:1px;margin-top:1px}
+.status-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:20px;font-size:11px;color:#fff}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:#fbbf24;transition:background .3s}
+.hdr-btn{background:rgba(255,255,255,.9);border:none;color:var(--pri-d);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:4px}
+.hdr-btn:hover{background:#fff}
+
+.nav{background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;padding:0 16px;overflow-x:auto;gap:2px;position:sticky;top:0;z-index:90}
+.tab{padding:11px 14px;font-size:12px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none;transition:color .15s}
+.tab:hover{color:var(--pri)}
+.tab.on{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+
+.page{display:none;padding:16px 16px 40px}
+.page.on{display:block}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.g6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.mt{margin-top:14px}
+
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:14px}
+.ch{font-size:11px;color:var(--t2);font-weight:600;margin-bottom:11px;display:flex;align-items:center;gap:6px;letter-spacing:.3px}
+.ch-ico{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:5px;flex-shrink:0}
+.cw{position:relative;width:100%}
+
+.kpi{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;border-top:3px solid}
+.kpi-l{font-size:10px;color:var(--t3);letter-spacing:.5px;margin-bottom:4px}
+.kpi-v{font-size:20px;font-weight:700;line-height:1.1}
+.kpi-u{font-size:11px;font-weight:400}
+.kpi-s{font-size:10px;color:var(--t3);margin-top:3px}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;color:var(--t3)}
+.empty-btn{margin-top:14px;background:var(--pri);color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+
+.b{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+.bg{background:var(--grn-p);color:#03543f}
+.bw{background:var(--amb-p);color:#723b13}
+.br{background:var(--red-p);color:#9b1c1c}
+.bp{background:var(--pri-p);color:#1e3a8a}
+.bpu{background:var(--pur-p);color:#4a1d96}
+.bc{background:var(--cyan-p);color:#065f60}
+
+select,input[type=password],input[type=text]{background:var(--surf);border:1px solid var(--bdr);color:var(--t1);padding:5px 9px;border-radius:6px;font-size:11px;font-family:inherit;outline:none}
+select:focus,input:focus{border-color:var(--pri)}
+.seg{display:flex;border:1px solid var(--bdr);border-radius:7px;overflow:hidden;background:var(--bg);flex-wrap:wrap}
+.sb{padding:5px 11px;font-size:11px;cursor:pointer;color:var(--t2);background:transparent;border:none;font-family:inherit;transition:all .12s;white-space:nowrap}
+.sb.on{background:var(--pri);color:#fff;font-weight:600}
+
+.drop-zone{border:2px dashed #c4cfe8;border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--pri);background:var(--pri-p)}
+.file-row{background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:9px 12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t2)}
+.parse-btn{background:var(--pri);color:#fff;border:none;padding:8px 22px;border-radius:7px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:6px;transition:opacity .15s}
+.parse-btn:hover{opacity:.9}
+.parse-btn:disabled{opacity:.5;cursor:not-allowed}
+.dl-btn{background:var(--grn);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:4px;transition:opacity .15s}
+.dl-btn:hover{opacity:.88}
+
+.rtbl{width:100%;border-collapse:collapse;font-size:11px}
+.rtbl th{color:var(--t3);font-weight:500;padding:5px 8px;text-align:left;border-bottom:1px solid var(--bdr);font-size:10px;letter-spacing:.3px}
+.rtbl td{padding:5px 8px;border-bottom:1px solid #f4f7fc;color:var(--t1)}
+.rtbl tr:hover td{background:#f8fafd}
+.rn{font-size:10px;font-weight:700;min-width:18px;display:inline-block;text-align:right;color:var(--t3)}
+.rn.g{color:#b45309}.rn.s{color:#6b7280}.rn.b{color:#92400e}
+.barmini{height:5px;background:#eef2fa;border-radius:3px;overflow:hidden;margin-top:2px}
+.barfill{height:100%;border-radius:3px}
+
+.smry{background:linear-gradient(135deg,#ebf5ff,#f0f7ff);border:1px solid #c3dafe;border-radius:8px;padding:10px 14px;font-size:12px;color:#1e429f;line-height:1.8;margin-bottom:14px}
+.smry strong{color:var(--pri-d)}
+
+/* ── Knowledge page two-col layout ── */
+.kn-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.kn-left{display:flex;flex-direction:column;gap:14px}
+.kn-right{position:sticky;top:58px;max-height:calc(100vh - 80px);overflow-y:auto}
+
+/* AI panel */
+.ai-panel{background:linear-gradient(160deg,#f5f3ff,#faf5ff);border:1px solid #ddd6fe;border-radius:12px;padding:16px}
+.ai-hd{font-size:12px;color:var(--pur);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ai-btn{background:var(--pur);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:opacity .15s;width:100%;justify-content:center;margin-top:8px}
+.ai-btn:hover{opacity:.85}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-out{background:#fff;border:1px solid #ddd6fe;border-radius:8px;padding:12px;font-size:12px;color:var(--t1);line-height:1.8;min-height:120px;white-space:pre-wrap;max-height:400px;overflow-y:auto;margin-top:8px}
+
+.prow{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.plbl{width:64px;font-size:10px;color:var(--t2);text-align:right;flex-shrink:0}
+.pbar{flex:1;height:7px;background:#eef2fa;border-radius:4px;overflow:hidden}
+.pfill{height:100%;border-radius:4px}
+.pval{font-size:10px;color:var(--t3);min-width:28px}
+
+.hm-wrap{overflow-x:auto}
+
+.info-box{background:var(--pri-p);border:1px solid #c3dafe;border-radius:8px;padding:10px 14px;font-size:11px;color:#1e3a8a;line-height:1.8}
+.info-box strong{color:var(--pri-d)}
+.fbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.flbl{font-size:11px;color:var(--t3)}
+.sbox{overflow-y:auto;max-height:400px}
+.reg-card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px}
+.tpl-card{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tpl-info{font-size:11px;color:var(--t2);line-height:1.5}
+.tpl-info strong{color:var(--t1);font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-ico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+    </div>
+    <div>
+      <div class="hdr-ttl">瑞安市小学数学六年级监测数据多维分析可视化看板</div>
+      <div class="hdr-sub">ELEMENTARY MATH MONITORING · MULTI-DIMENSIONAL ANALYTICS · 2026</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="status-pill"><span class="sdot" id="sdot"></span><span id="stxt">待上传数据</span></div>
+    <button class="hdr-btn" onclick="goPage('upload')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      上传数据
+    </button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="tab on" data-page="overview">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>宏观概览</button>
+  <button class="tab" data-page="quality">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>试题质量</button>
+  <button class="tab" data-page="school">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>区域对比</button>
+  <button class="tab" data-page="district">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>学区专项</button>
+  <button class="tab" data-page="knowledge">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2z"/><path d="M12 8v4l3 3"/></svg>知识诊断</button>
+  <button class="tab" data-page="upload">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>数据管理</button>
+</nav>
+
+<!-- ═══════════════════════════════
+     PAGE: 宏观概览
+═══════════════════════════════ -->
+<div class="page on" id="pg-overview">
+  <div id="ov-e" class="card"><div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c8d3e8" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+    <h3 style="font-size:14px;color:var(--t2);margin:8px 0 5px">暂无监测数据</h3>
+    <p style="font-size:11px;color:var(--t3);text-align:center;max-width:260px;line-height:1.6">请前往"数据管理"上传四张Excel文件，或直接加载内置示范数据</p>
+    <button class="empty-btn" onclick="goPage('upload')">前往上传数据</button>
+  </div></div>
+  <div id="ov-c" style="display:none">
+    <div id="smryBar" class="smry"></div>
+    <div class="g6" id="kpiRow" style="margin-bottom:14px"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#ebf5ff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>全市分数段分布</div>
+        <div class="cw" style="height:230px"><canvas id="c-sd" role="img" aria-label="分数段分布"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v10l4 4"/></svg></div>各学区参考人数占比</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cw" style="height:210px;flex:1"><canvas id="c-pie" role="img" aria-label="学区人数饼图"></canvas></div>
+          <div id="pieLgd" style="font-size:10px;min-width:90px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card mt">
+      <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>各学区加权平均分对比</div>
+      <div class="cw" style="height:180px"><canvas id="c-ravg" role="img" aria-label="学区平均分"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE: 试题质量
+═══════════════════════════════ -->
+<div class="page" id="pg-quality">
+  <div id="qu-e" class="card"><div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c8d3e8" stroke-width="1.5"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9"/></svg>
+    <h3 style="font-size:14px;color:var(--t2);margin:8px 0 5px">暂无试题数据</h3>
+    <p style="font-size:11px;color:var(--t3);text-align:center;max-width:260px;line-height:1.6">上传"表2-试卷汇总分析"后将自动生成难度分布与区分度分析</p>
+    <button class="empty-btn" onclick="goPage('upload')">上传数据</button>
+  </div></div>
+  <div id="qu-c" style="display:none">
+    <div class="g3" style="margin-bottom:14px">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div>难度分布直方图</div>
+        <div class="cw" style="height:200px"><canvas id="c-diff" role="img" aria-label="难度分布"></canvas></div>
+        <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+          <span style="font-size:10px;color:#057a55;display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#057a55;border-radius:2px;display:inline-block"></span>容易 ≥0.8</span>
+          <span style="font-size:10px;color:#b45309;display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#b45309;border-radius:2px;display:inline-block"></span>适中 0.4-0.8</span>
+          <span style="font-size:10px;color:#e02424;display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#e02424;border-radius:2px;display:inline-block"></span>较难 &lt;0.4</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#edebfe"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7e3af2" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>区分度分级统计</div>
+        <div style="display:flex;justify-content:center"><div class="cw" style="height:160px;max-width:180px"><canvas id="c-disc" role="img" aria-label="区分度分级"></canvas></div></div>
+        <div id="discLgd" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;justify-content:center;font-size:10px"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>试卷科学性评分</div>
+        <div id="sciBox"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ch-ico" style="background:#e0f9f9"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0e9f9f" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>难度 × 区分度散点图（悬停查看题目详情）</div>
+      <div class="cw" style="height:280px"><canvas id="c-sct" role="img" aria-label="难度区分度散点图"></canvas></div>
+      <div style="margin-top:8px"><span style="font-size:10px;color:var(--t3)">区分度偏低题目（D&lt;0.2）：</span><span id="lowD"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE: 区域对比
+═══════════════════════════════ -->
+<div class="page" id="pg-school">
+  <div id="sc-e" class="card"><div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c8d3e8" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    <h3 style="font-size:14px;color:var(--t2);margin:8px 0 5px">暂无学校数据</h3>
+    <p style="font-size:11px;color:var(--t3);text-align:center;max-width:260px;line-height:1.6">上传"表4-基础指标对比"后将自动生成四维排名与气泡对比</p>
+    <button class="empty-btn" onclick="goPage('upload')">上传数据</button>
+  </div></div>
+  <div id="sc-c" style="display:none">
+    <div class="fbar">
+      <span class="flbl">学区：</span>
+      <select id="regSel" onchange="refreshSchool()"><option value="all">全部学区</option></select>
+      <span class="flbl">显示：</span>
+      <select id="scopeSel" onchange="refreshSchool()">
+        <option value="all">全部</option><option value="top10">前10名</option><option value="bot10">后10名</option>
+      </select>
+    </div>
+    <div class="fbar">
+      <span class="flbl">排名维度：</span>
+      <div class="seg">
+        <button class="sb on" onclick="setDim('avg',this)">平均分</button>
+        <button class="sb" onclick="setDim('a',this)">A率(前20%)</button>
+        <button class="sb" onclick="setDim('p',this)">P率(前80%)</button>
+        <button class="sb" onclick="setDim('comp',this)">综合实力</button>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div><span id="rankTitle">学校平均分排名</span></div>
+        <div class="sbox" id="rankTblWrap"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#ebf5ff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>A率 vs P率对比</div>
+        <div class="cw" id="apWrap" style="height:400px"><canvas id="c-ap" role="img" aria-label="A率P率对比"></canvas></div>
+      </div>
+    </div>
+    <div class="card mt">
+      <div class="ch"><div class="ch-ico" style="background:#ffe4e6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>气泡图：平均分 × 标准差（气泡大小 = A率）</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:6px">右下角=高分均衡优质校 · 左上角=低分两极分化 · 气泡越大尖子生越多</div>
+      <div class="cw" style="height:280px"><canvas id="c-bub" role="img" aria-label="气泡图"></canvas></div>
+      <div id="bubLgd" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:10px;color:var(--t3)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE: 学区专项
+═══════════════════════════════ -->
+<div class="page" id="pg-district">
+  <div id="dt-e" class="card"><div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c8d3e8" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+    <h3 style="font-size:14px;color:var(--t2);margin:8px 0 5px">暂无数据</h3>
+    <p style="font-size:11px;color:var(--t3);text-align:center;max-width:260px;line-height:1.6">上传"表4-基础指标对比"后将激活学区专项分析</p>
+    <button class="empty-btn" onclick="goPage('upload')">上传数据</button>
+  </div></div>
+  <div id="dt-c" style="display:none">
+    <div class="fbar">
+      <span class="flbl">选择学区：</span>
+      <div class="seg" id="dtSeg"></div>
+    </div>
+    <div id="dtCards" class="g4" style="margin-bottom:14px"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/></svg></div><span id="dtRankTitle">学区内学校排名</span></div>
+        <div class="sbox" id="dtRankWrap"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>学区内A率 vs P率</div>
+        <div class="cw" id="dtApWrap" style="height:300px"><canvas id="c-dtap" role="img" aria-label="学区A率P率"></canvas></div>
+      </div>
+    </div>
+    <div class="card mt">
+      <div class="ch"><div class="ch-ico" style="background:#ebf5ff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>各学区综合实力横向对比（平均分 + A率）</div>
+      <div class="cw" style="height:200px"><canvas id="c-dtcmp" role="img" aria-label="学区综合对比"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE: 知识诊断  (左右两栏)
+═══════════════════════════════ -->
+<div class="page" id="pg-knowledge">
+  <div id="kn-e" class="card"><div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c8d3e8" stroke-width="1.5"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2z"/></svg>
+    <h3 style="font-size:14px;color:var(--t2);margin:8px 0 5px">暂无命题数据</h3>
+    <p style="font-size:11px;color:var(--t3);text-align:center;max-width:260px;line-height:1.6">上传表1与表2后将激活素养雷达图与知识点热力图</p>
+    <button class="empty-btn" onclick="goPage('upload')">上传数据</button>
+  </div></div>
+  <div id="kn-c" style="display:none">
+    <div class="kn-layout">
+      <!-- 左侧：图表区 -->
+      <div class="kn-left">
+        <div class="card">
+          <div class="ch"><div class="ch-ico" style="background:#edebfe"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7e3af2" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg></div>素养目标得分率雷达图</div>
+          <div style="display:flex;justify-content:center"><div class="cw" style="height:260px;max-width:380px;width:100%"><canvas id="c-rad" role="img" aria-label="素养雷达图"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>各素养目标得分率（升序排列）</div>
+          <div class="cw" style="height:240px"><canvas id="c-lit" role="img" aria-label="素养得分率条形图"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>知识点热力图（领域 × 主题 平均得分率）</div>
+          <div class="hm-wrap" id="hmBox"></div>
+        </div>
+      </div>
+      <!-- 右侧：AI面板 (sticky) -->
+      <div class="kn-right">
+        <div class="ai-panel">
+          <div class="ai-hd">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            AI个性化诊断报告
+          </div>
+          <div style="font-size:10px;color:var(--pur);margin-bottom:10px;line-height:1.5">基于DeepSeek API，根据当前监测数据生成专业教学诊断报告</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <span style="font-size:11px;color:var(--t3);white-space:nowrap">API Key</span>
+            <input type="password" id="aiKey" placeholder="sk-..." style="flex:1;font-size:11px">
+            <button onclick="saveKey()" style="background:var(--pur);color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">保存</button>
+          </div>
+          <div style="margin-bottom:6px">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:5px">分析对象</div>
+            <select id="aiTp" style="width:100%;margin-bottom:6px"><option value="district">全市整体</option><option value="region">按学区</option></select>
+            <select id="aiReg" style="width:100%;display:none"></select>
+          </div>
+          <button class="ai-btn" id="genBtn" onclick="genReport()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            生成诊断报告
+          </button>
+          <div class="ai-out" id="aiOut">点击"生成诊断报告"，AI将基于全量数据输出专业诊断报告...</div>
+          <!-- 薄弱点速览 -->
+          <div style="margin-top:12px;border-top:1px solid #ddd6fe;padding-top:10px">
+            <div style="font-size:11px;color:var(--pur);font-weight:600;margin-bottom:8px">薄弱点速览</div>
+            <div id="weakPanel" style="font-size:11px;color:var(--t2);line-height:1.8"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE: 数据管理
+═══════════════════════════════ -->
+<div class="page" id="pg-upload">
+  <div class="g2">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#ebf5ff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>上传数据文件</div>
+        <p style="font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.7">上传四张Excel文件以激活看板，格式与模板一致即可，支持年度推广复用。</p>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fInp').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onDrop(event)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0bcd4" stroke-width="1.5" style="display:block;margin:0 auto 8px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p style="font-size:12px;color:var(--t2)">点击此处或拖拽上传 Excel 文件（.xlsx）</p>
+          <p style="font-size:10px;margin-top:4px;color:var(--t3)">支持<span style="color:var(--pri);font-weight:600">批量上传四个文件</span>，系统自动识别表格类型</p>
+          <input type="file" id="fInp" style="display:none" multiple accept=".xlsx,.xls" onchange="onFileSelect(this)">
+        </div>
+        <div id="fileList" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+        <div id="parseArea" style="display:none;margin-top:12px">
+          <button class="parse-btn" id="parseBtn" onclick="parseFiles()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            开始解析并加载数据
+          </button>
+        </div>
+        <div id="parseMsg" style="margin-top:10px;font-size:11px;color:var(--t2);line-height:1.9"></div>
+      </div>
+
+      <!-- 模板下载 -->
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>模板文件下载</div>
+        <p style="font-size:11px;color:var(--t3);margin-bottom:10px;line-height:1.6">下载标准模板，按格式填写数据后上传即可正确解析。</p>
+        <div style="display:flex;flex-direction:column;gap:8px" id="tplList">
+          <div class="tpl-card">
+            <div class="tpl-info"><strong>表3：分数段人数及占比</strong><br>列：所属区域、学校、统计人数、满分人数、各分数段人数</div>
+            <button class="dl-btn" onclick="dlTpl('t3')">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>下载
+            </button>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-info"><strong>表4：基础指标对比</strong><br>列：所属区域、学校、统计人数、满分人数、平均分、标准差、A率比率、P率比率</div>
+            <button class="dl-btn" onclick="dlTpl('t4')">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>下载
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#def7ec"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>内置示范数据</div>
+        <p style="font-size:11px;color:var(--t3);margin-bottom:10px;line-height:1.6">无需上传文件，直接使用2024年真实监测数据体验完整看板功能</p>
+        <div class="info-box" style="margin-bottom:10px"><strong>包含：</strong>107所学校 · 9个学区 · 15937人 · 45道题目</div>
+        <button onclick="loadBuiltin()" style="background:var(--grn);color:#fff;border:none;padding:7px 16px;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;font-weight:600">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          加载内置示范数据
+        </button>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#fef3c7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>数据列名对照说明</div>
+        <div style="font-size:11px;color:var(--t3);line-height:2">
+          <div><strong style="color:var(--t1)">表3列位置（按列序号）：</strong></div>
+          <div>0=所属区域 · 1=学校 · 2=统计人数 · 3=满分人数</div>
+          <div>4=100分人数 · 6=95-100人数 · 8=90-95人数</div>
+          <div>10=85-90 · 12=80-85 · 14=75-80 · 16=70-75</div>
+          <div>18=65-70 · 20=60-65 · 22=55-60 · 24=50-55</div>
+          <div>26=45-50 · 28=40-45 · 30=40以下</div>
+          <div style="margin-top:6px"><strong style="color:var(--t1)">表4列位置（按列序号）：</strong></div>
+          <div>0=所属区域 · 1=学校 · 2=统计人数 · 3=满分人数</div>
+          <div>8=标准差 · 12=平均分 · 15=A率比率 · 18=P率比率</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-ico" style="background:#ebf5ff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>使用说明</div>
+        <div class="info-box">
+          <strong>上传解析：</strong>选4个xlsx → 点"开始解析"，自动识别<br>
+          <strong>格式要求：</strong>保持列名/列序与模板一致<br>
+          <strong>模板下载：</strong>可下载标准模板填写新数据<br>
+          <strong>推广复用：</strong>新学年替换Excel，看板自动刷新<br>
+          <strong>数据安全：</strong>全部本地解析，不传输至任何服务器
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── COLOR SYSTEM ── */
+const C={
+  blue:'#1a56db',cyan:'#0e9f9f',green:'#057a55',amber:'#b45309',
+  red:'#e02424',purple:'#7e3af2',rose:'#e11d48',orange:'#ea580c',
+  pink:'#db2777',teal:'#0d9488',grid:'rgba(209,218,232,.5)',muted:'#9ba3b8'
+};
+const RC={
+  '直属':C.blue,'安阳学区':C.cyan,'塘下学区':C.green,
+  '莘塍学区':C.amber,'飞云学区':C.purple,'马屿学区':C.rose,
+  '湖岭学区':C.orange,'陶山学区':C.pink,'高楼学区':C.teal
+};
+
+/* ── STATE ── */
+let EXAM=[],SCHOOL=[],SDIST=[],loaded=false;
+let charts={},rankDim='avg',dtRegion='';
+let pendingFiles=[];
+
+/* ── NAV ── */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>goPage(t.dataset.page)));
+function goPage(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.page===n));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='pg-'+n));
+}
+document.getElementById('aiTp').addEventListener('change',function(){
+  document.getElementById('aiReg').style.display=this.value==='region'?'block':'none';
+});
+
+/* ── FILE UPLOAD ── */
+function onDrop(ev){
+  ev.preventDefault();document.getElementById('dropZone').classList.remove('drag');
+  const fs=[...ev.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i));
+  if(fs.length)handleFiles(fs);
+}
+function onFileSelect(inp){handleFiles([...inp.files]);}
+function handleFiles(files){
+  pendingFiles=files;
+  const fl=document.getElementById('fileList');fl.innerHTML='';
+  files.forEach(f=>{
+    fl.innerHTML+=`<div class="file-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C.green}" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span style="flex:1">${f.name}</span><span style="color:var(--t3);font-size:10px">${(f.size/1024).toFixed(0)} KB</span>
+    </div>`;
+  });
+  document.getElementById('parseArea').style.display='block';
+  document.getElementById('parseMsg').innerHTML=`<span style="color:${C.amber}">已选择 ${files.length} 个文件，点击"开始解析"加载数据</span>`;
+}
+
+/* ══════════════════════════════════════════════════
+   CORE PARSER — column-index based (robust)
+   表3: row0=header1, row1=header2, row2+=data
+         col0=区域, col1=学校, col2=人数, col3=满分
+         col4=100分人数, col6=95-100, col8=90-95,
+         col10=85-90, col12=80-85, col14=75-80,
+         col16=70-75, col18=65-70, col20=60-65,
+         col22=55-60, col24=50-55, col26=45-50,
+         col28=40-45, col30=<40
+   表4: row0=header1, row1=header2, row2+=data
+         col0=区域, col1=学校, col2=统计人数, col3=满分
+         col8=标准差, col12=平均分, col15=A率比率, col18=P率比率
+══════════════════════════════════════════════════ */
+async function parseFiles(){
+  if(!pendingFiles.length){alert('请先选择文件');return;}
+  if(typeof XLSX==='undefined'){alert('SheetJS未加载，请检查网络后重试');return;}
+  const btn=document.getElementById('parseBtn');
+  btn.disabled=true;btn.innerHTML='解析中...';
+  const msg=document.getElementById('parseMsg');
+  msg.innerHTML='<span style="color:var(--blue)">正在解析文件...</span>';
+
+  let t1=null,t2=null,t3raw=null,t4raw=null;
+  const errs=[];
+
+  for(const f of pendingFiles){
+    try{
+      const buf=await f.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array'});
+      const name=f.name;
+      if(name.includes('表1')||name.includes('命题')||name.includes('明细')){
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        t1=rows.filter(r=>r['题目']&&String(r['题目']).startsWith('T'));
+        msg.innerHTML+=`<br>✓ 表1命题明细：解析 ${t1.length} 条`;
+      }
+      else if(name.includes('表2')||name.includes('试卷')||(name.includes('汇总')&&!name.includes('表4'))){
+        const sheetName=wb.SheetNames.find(s=>s.includes('汇总')||s.includes('分析'))||wb.SheetNames[0];
+        const ws=wb.Sheets[sheetName];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:0});
+        t2=rows.filter(r=>r['题目']&&String(r['题目']).startsWith('T'));
+        msg.innerHTML+=`<br>✓ 表2试卷汇总：解析 ${t2.length} 条`;
+      }
+      else if(name.includes('表3')||name.includes('分数段')){
+        /* ── 表3: 按列序号解析，跳过前2行表头 ── */
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        // sheet_to_json with header:1 returns arrays
+        const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:0});
+        // data starts at row index 2
+        t3raw=allRows.slice(2).filter(r=>r[0]&&r[0]!=='所属区域'&&r[1]&&r[1]!=='学校'&&(Number(r[2])||0)>0);
+        msg.innerHTML+=`<br>✓ 表3分数段：解析 ${t3raw.length} 条`;
+      }
+      else if(name.includes('表4')||name.includes('基础指标')){
+        /* ── 表4: 按列序号解析，跳过前2行表头 ── */
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:0});
+        t4raw=allRows.slice(2).filter(r=>r[0]&&r[0]!=='所属区域'&&r[1]&&r[1]!=='学校'&&(Number(r[2])||0)>0);
+        msg.innerHTML+=`<br>✓ 表4基础指标：解析 ${t4raw.length} 条`;
+      }
+    }catch(e){errs.push(f.name+': '+e.message);}
+  }
+
+  if(errs.length) msg.innerHTML+=`<br><span style="color:${C.red}">⚠ ${errs.join('; ')}</span>`;
+
+  // Build EXAM
+  if(t2){
+    EXAM=t2.map(r=>({
+      t:String(r['题目']),s:Number(r['分值'])||2,
+      avg:Number(r['平均分'])||0,rate:Number(r['得分率'])||0,
+      diff:Number(r['难度指数'])||0,disc:Number(r['区分度'])||0,
+    }));
+    if(t1){
+      t1.forEach(r=>{
+        const e=EXAM.find(x=>x.t===String(r['题目']));
+        if(e){e.domain=r['领域']||'';e.topic=r['主题']||'';e.literacy=r['素养目标']||'';}
+      });
+    }
+  }
+
+  // Build SCHOOL from t4raw using column indices
+  if(t4raw&&t4raw.length){
+    SCHOOL=t4raw.map(r=>({
+      r:String(r[0]||'').trim(),
+      n:String(r[1]||'').trim(),
+      cnt:Number(r[2])||0,
+      fullScore:Number(r[3])||0,
+      hi:Number(r[4])||0,
+      lo:Number(r[5])||0,
+      med:Number(r[7])||0,
+      std:Number(r[8])||0,
+      avg:Number(r[12])||0,
+      a:Number(r[15])||0,
+      p:Number(r[18])||0,
+    })).filter(s=>s.r&&s.n&&s.cnt>0&&s.avg>0);
+  }
+
+  // Build SDIST from t3raw
+  if(t3raw&&t3raw.length){
+    // col indices for score band counts: 4,6,8,10,12,14,16,18,20,22,24,26,28,30
+    const bandCols=[4,6,8,10,12,14,16,18,20,22,24,26,28,30];
+    const bandLabels=['100','95-100','90-95','85-90','80-85','75-80','70-75','65-70','60-65','55-60','50-55','45-50','40-45','<40'];
+    SDIST=bandLabels.map((lbl,i)=>({
+      range:lbl,
+      count:t3raw.reduce((s,r)=>s+(Number(r[bandCols[i]])||0),0)
+    }));
+  }
+
+  if(EXAM.length||SCHOOL.length){
+    loaded=true;
+    updateStatus();renderAll();
+    msg.innerHTML+=`<br><br><span style="color:${C.green};font-weight:600">✓ 数据加载成功！已跳转至宏观概览</span>`;
+    setTimeout(()=>goPage('overview'),700);
+  }else{
+    msg.innerHTML+=`<br><span style="color:${C.red}">未识别到有效数据，请检查文件格式或下载模板参考。</span>`;
+  }
+  btn.disabled=false;btn.innerHTML='开始解析并加载数据';
+}
+
+/* ── BUILTIN ── */
+function loadBuiltin(){
+  EXAM=BUILTIN_EXAM;SCHOOL=BUILTIN_SCHOOL;SDIST=BUILTIN_SDIST;
+  loaded=true;updateStatus();renderAll();
+  document.getElementById('parseMsg').innerHTML=`<span style="color:${C.green};font-weight:600">✓ 内置示范数据加载成功</span>`;
+  setTimeout(()=>goPage('overview'),500);
+}
+
+function updateStatus(){
+  document.getElementById('sdot').style.background='#34d399';
+  document.getElementById('stxt').textContent=`数据已加载 · ${SCHOOL.length}校 · ${EXAM.length}题`;
+  const regs=[...new Set(SCHOOL.map(s=>s.r))];
+  const rs=document.getElementById('regSel');
+  rs.innerHTML='<option value="all">全部学区</option>';
+  regs.forEach(r=>rs.innerHTML+=`<option value="${r}">${r}</option>`);
+  const ar=document.getElementById('aiReg');ar.innerHTML='';
+  regs.forEach(r=>ar.innerHTML+=`<option value="${r}">${r}</option>`);
+  const seg=document.getElementById('dtSeg');seg.innerHTML='';
+  dtRegion=regs[0]||'';
+  regs.forEach((r,i)=>seg.innerHTML+=`<button class="sb${i===0?' on':''}" onclick="setDtReg('${r}',this)">${r}</button>`);
+}
+function renderAll(){renderOv();renderQu();renderSc();renderDt();renderKn();}
+
+/* ── CHART HELPERS ── */
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+/* ════════════════════════════
+   宏观概览
+════════════════════════════ */
+function renderOv(){
+  document.getElementById('ov-e').style.display='none';
+  document.getElementById('ov-c').style.display='block';
+  const tot=SCHOOL.reduce((s,x)=>s+x.cnt,0);
+  const wavg=tot>0?+(SCHOOL.reduce((s,x)=>s+x.avg*x.cnt,0)/tot).toFixed(1):0;
+  const aAvg=SCHOOL.length?+(SCHOOL.reduce((s,x)=>s+x.a,0)/SCHOOL.length).toFixed(1):0;
+  const pAvg=SCHOOL.length?+(SCHOOL.reduce((s,x)=>s+x.p,0)/SCHOOL.length).toFixed(1):0;
+  const regs=[...new Set(SCHOOL.map(s=>s.r))];
+  const best=[...SCHOOL].sort((a,b)=>b.avg-a.avg)[0];
+  const wkLit=getWeakLit();
+
+  document.getElementById('smryBar').innerHTML=
+    `全市共 <strong>${SCHOOL.length}</strong> 所学校，<strong>${tot.toLocaleString()}</strong> 人参与监测，覆盖 <strong>${regs.length}</strong> 个学区。全市加权平均分 <strong>${wavg}</strong> 分，A率均值 <strong>${aAvg}%</strong>，P率均值 <strong>${pAvg}%</strong>。最强学校：<strong>${best?best.r+'-'+best.n:'—'}</strong>（${best?best.avg.toFixed(1):0}分）。当前最薄弱素养维度：<strong>${wkLit}</strong>，建议重点关注。`;
+
+  document.getElementById('kpiRow').innerHTML=[
+    {l:'参考人数',v:tot.toLocaleString(),u:'人',s:'全市参与监测',c:C.blue},
+    {l:'全市平均分',v:wavg,u:'分',s:'加权平均',c:C.amber},
+    {l:'A率均值',v:aAvg+'%',u:'',s:'前20%优秀',c:C.green},
+    {l:'P率均值',v:pAvg+'%',u:'',s:'前80%达标',c:C.cyan},
+    {l:'参与学校',v:SCHOOL.length,u:'所',s:regs.length+'个学区',c:C.purple},
+    {l:'监测题目',v:EXAM.length,u:'题',s:'满分100分',c:C.rose},
+  ].map(k=>`<div class="kpi" style="border-top-color:${k.c}">
+    <div class="kpi-l">${k.l}</div>
+    <div class="kpi-v" style="color:${k.c}">${k.v}<span class="kpi-u">${k.u}</span></div>
+    <div class="kpi-s">${k.s}</div>
+  </div>`).join('');
+
+  dc('sd');
+  if(SDIST.length){
+    const bc=SDIST.map((_,i)=>i<3?C.green:i<7?C.blue:i<10?C.amber:C.red);
+    charts['sd']=new Chart(document.getElementById('c-sd').getContext('2d'),{type:'bar',
+      data:{labels:SDIST.map(d=>d.range),datasets:[{data:SDIST.map(d=>d.count),backgroundColor:bc,borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}},y:{ticks:{color:C.muted},grid:{color:C.grid}}}}});
+  }
+
+  dc('pie');
+  const rm={};SCHOOL.forEach(s=>{rm[s.r]=(rm[s.r]||0)+s.cnt;});
+  const rn=Object.keys(rm),rv=rn.map(k=>rm[k]),pc=rn.map(r=>RC[r]||C.blue);
+  charts['pie']=new Chart(document.getElementById('c-pie').getContext('2d'),{type:'doughnut',
+    data:{labels:rn,datasets:[{data:rv,backgroundColor:pc,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}人`}}}}});
+  document.getElementById('pieLgd').innerHTML=rn.map((n,i)=>
+    `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px"><span style="width:8px;height:8px;background:${pc[i]};border-radius:2px;display:inline-block"></span><span style="font-size:9px;color:var(--t3)">${n}</span></div>`).join('');
+
+  dc('ravg');
+  const ra=rn.map(r=>{const ss=SCHOOL.filter(s=>s.r===r);return{r,v:+(ss.reduce((a,s)=>a+s.avg,0)/ss.length).toFixed(1)};}).sort((a,b)=>b.v-a.v);
+  charts['ravg']=new Chart(document.getElementById('c-ravg').getContext('2d'),{type:'bar',
+    data:{labels:ra.map(x=>x.r),datasets:[{data:ra.map(x=>x.v),backgroundColor:ra.map(x=>RC[x.r]||C.blue),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.muted},grid:{color:C.grid}},y:{min:Math.max(0,Math.min(...ra.map(x=>x.v))-5),ticks:{color:C.muted},grid:{color:C.grid}}}}});
+}
+
+/* ════════════════════════════
+   试题质量
+════════════════════════════ */
+function renderQu(){
+  if(!EXAM.length)return;
+  document.getElementById('qu-e').style.display='none';
+  document.getElementById('qu-c').style.display='block';
+  const dr=['0.9-1.0','0.8-0.9','0.7-0.8','0.6-0.7','0.5-0.6','0.4-0.5','0.3-0.4','<0.3'];
+  const dc2=dr.map((r,i)=>{const[lo,hi]=i===7?[0,.3]:[+r.split('-')[0],+r.split('-')[1]];return EXAM.filter(d=>i===7?d.diff<.3:d.diff>=lo&&d.diff<hi).length;});
+  dc('diff');
+  charts['diff']=new Chart(document.getElementById('c-diff').getContext('2d'),{type:'bar',
+    data:{labels:dr,datasets:[{data:dc2,backgroundColor:dc2.map((_,i)=>i<2?C.green:i<5?C.amber:C.red),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}},y:{ticks:{color:C.muted,stepSize:2},grid:{color:C.grid}}}}});
+
+  const dBkt=[EXAM.filter(d=>d.disc>=.4).length,EXAM.filter(d=>d.disc>=.3&&d.disc<.4).length,EXAM.filter(d=>d.disc>=.2&&d.disc<.3).length,EXAM.filter(d=>d.disc<.2).length];
+  const dLbls=['优秀≥0.4','良好0.3-0.4','一般0.2-0.3','偏低<0.2'];
+  const dClrs=[C.blue,C.cyan,C.amber,C.red];
+  dc('disc');
+  charts['disc']=new Chart(document.getElementById('c-disc').getContext('2d'),{type:'doughnut',
+    data:{labels:dLbls,datasets:[{data:dBkt,backgroundColor:dClrs,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}题`}}}}});
+  document.getElementById('discLgd').innerHTML=dLbls.map((l,i)=>
+    `<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:${dClrs[i]};border-radius:2px;display:inline-block"></span>${l}: ${dBkt[i]}题</span>`).join('');
+
+  const sci=calcSci();const scC=sci>=80?C.green:sci>=65?C.amber:C.red;
+  const progs=[{l:'难度合理',v:+(EXAM.filter(d=>d.diff>=.4&&d.diff<.9).length/EXAM.length*100).toFixed(0),c:C.blue},{l:'区分优良',v:+(EXAM.filter(d=>d.disc>=.3).length/EXAM.length*100).toFixed(0),c:C.green},{l:'容易占比',v:+(EXAM.filter(d=>d.diff>=.8).length/EXAM.length*100).toFixed(0),c:C.cyan},{l:'较难占比',v:+(EXAM.filter(d=>d.diff<.4).length/EXAM.length*100).toFixed(0),c:C.amber}];
+  document.getElementById('sciBox').innerHTML=`<div style="display:flex;gap:10px;align-items:flex-start">
+    <div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px 14px;border:1px solid var(--bdr);flex-shrink:0">
+      <div style="font-size:32px;font-weight:700;color:${scC};line-height:1">${sci}</div>
+      <div style="font-size:9px;color:var(--t3);margin-top:3px">科学性指数</div>
+      <div class="b ${sci>=80?'bg':sci>=65?'bw':'br'}" style="margin-top:5px">${sci>=80?'优秀':sci>=65?'良好':'待改进'}</div>
+    </div>
+    <div style="flex:1">${progs.map(p=>`<div class="prow"><span class="plbl">${p.l}</span><div class="pbar"><div class="pfill" style="width:${p.v}%;background:${p.c}"></div></div><span class="pval">${p.v}%</span></div>`).join('')}</div>
+  </div>`;
+
+  const scData=EXAM.map(d=>({x:+d.diff.toFixed(4),y:+d.disc.toFixed(4),label:d.t,lit:d.literacy||''}));
+  dc('sct');
+  charts['sct']=new Chart(document.getElementById('c-sct').getContext('2d'),{type:'scatter',
+    data:{datasets:[{data:scData,backgroundColor:scData.map(d=>d.y<.2?C.red:d.y<.3?C.amber:d.y<.4?C.cyan:C.blue),pointRadius:6,pointHoverRadius:9}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:12},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`题目: ${c.raw.label}`,`难度: ${c.raw.x.toFixed(2)}`,`区分度: ${c.raw.y.toFixed(2)}`,c.raw.lit?`素养: ${c.raw.lit}`:''].filter(Boolean)}}},
+    scales:{x:{min:.15,max:1.05,title:{display:true,text:'难度指数',color:C.muted},ticks:{color:C.muted},grid:{color:C.grid}},y:{min:0,max:.9,title:{display:true,text:'区分度',color:C.muted},ticks:{color:C.muted},grid:{color:C.grid}}}}});
+
+  const ld=document.getElementById('lowD');ld.innerHTML='';
+  EXAM.filter(d=>d.disc<.2).forEach(d=>{ld.innerHTML+=`<span class="b br" style="margin-right:3px">${d.t}(D=${d.disc.toFixed(2)})</span>`;});
+}
+function calcSci(){
+  if(!EXAM.length)return 0;
+  const n=EXAM.length;
+  const distS=100-Math.abs(EXAM.filter(d=>d.diff>=.8).length/n-.4)*100-Math.abs(EXAM.filter(d=>d.diff>=.4&&d.diff<.8).length/n-.5)*100;
+  return Math.round(Math.max(0,Math.min(100,distS*.5+EXAM.filter(d=>d.disc>=.3).length/n*100*.5)));
+}
+
+/* ════════════════════════════
+   区域对比
+════════════════════════════ */
+function renderSc(){
+  if(!SCHOOL.length)return;
+  document.getElementById('sc-e').style.display='none';
+  document.getElementById('sc-c').style.display='block';
+  refreshSchool();buildBubble();
+}
+function setDim(dim,btn){
+  rankDim=dim;
+  document.querySelectorAll('#pg-school .seg .sb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const titles={avg:'学校平均分排名',a:'A率排名（前20%）',p:'P率排名（前80%）',comp:'综合实力排名'};
+  document.getElementById('rankTitle').textContent=titles[dim];
+  refreshSchool();
+}
+function getSchoolData(){
+  const reg=document.getElementById('regSel').value;
+  const scope=document.getElementById('scopeSel').value;
+  let data=reg==='all'?[...SCHOOL]:SCHOOL.filter(s=>s.r===reg);
+  if(rankDim==='comp')data.forEach(s=>{const mx=Math.max(...SCHOOL.map(x=>x.avg));const ma=Math.max(...SCHOOL.map(x=>x.a));const mp=Math.max(...SCHOOL.map(x=>x.p));s._c=mx&&ma&&mp?(s.avg/mx)*50+(s.a/ma)*30+(s.p/mp)*20:0;});
+  const key=rankDim==='avg'?'avg':rankDim==='a'?'a':rankDim==='p'?'p':'_c';
+  data.sort((a,b)=>(b[key]||0)-(a[key]||0));
+  if(scope==='top10')data=data.slice(0,10);
+  else if(scope==='bot10')data=data.slice(-10).reverse();
+  return data;
+}
+function refreshSchool(){
+  if(!loaded)return;
+  const data=getSchoolData();
+  const key=rankDim==='avg'?'avg':rankDim==='a'?'a':rankDim==='p'?'p':'_c';
+  const lbl=rankDim==='avg'?'平均分':rankDim==='a'?'A率%':rankDim==='p'?'P率%':'综合';
+  const maxV=Math.max(...data.map(s=>+(s[key]||0)));
+  let tbl=`<table class="rtbl"><thead><tr><th>#</th><th>学校</th><th>学区</th><th>${lbl}</th><th style="width:90px">对比</th></tr></thead><tbody>`;
+  data.forEach((s,i)=>{
+    const raw=+(s[key]||0);const v=raw.toFixed(1);const pct=maxV>0?(raw/maxV*100).toFixed(0):0;
+    const rCls=i===0?'g':i===1?'s':i===2?'b':'';
+    tbl+=`<tr><td><span class="rn ${rCls}">${i+1}</span></td>
+      <td style="font-weight:${i<3?'600':'400'};color:${i<3?C.amber:'inherit'}">${s.n}</td>
+      <td><span class="b bp">${s.r}</span></td>
+      <td style="font-weight:600;color:${i<3?C.amber:C.muted}">${v}</td>
+      <td><div class="barmini"><div class="barfill" style="width:${pct}%;background:${i<3?C.amber:i<10?C.blue:'#b0bcd4'}"></div></div></td></tr>`;
+  });
+  tbl+='</tbody></table>';
+  document.getElementById('rankTblWrap').innerHTML=tbl;
+  const h=Math.max(data.length*36+60,200);
+  document.getElementById('apWrap').style.height=h+'px';
+  dc('ap');
+  charts['ap']=new Chart(document.getElementById('c-ap').getContext('2d'),{type:'bar',
+    data:{labels:data.map(s=>s.n),datasets:[{label:'A率(前20%)',data:data.map(s=>+s.a.toFixed(1)),backgroundColor:C.blue+'cc',borderRadius:2},{label:'P率(前80%)',data:data.map(s=>+s.p.toFixed(1)),backgroundColor:C.amber+'cc',borderRadius:2}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}%`}}},scales:{x:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}},y:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}}}}});
+}
+function buildBubble(){
+  const bd=SCHOOL.map(s=>({x:+s.avg.toFixed(1),y:+s.std.toFixed(2),r:Math.max(4,s.a*.35),label:s.n,region:s.r,a:s.a}));
+  dc('bub');
+  charts['bub']=new Chart(document.getElementById('c-bub').getContext('2d'),{type:'bubble',
+    data:{datasets:[{data:bd,backgroundColor:bd.map(d=>(RC[d.region]||C.blue)+'77'),borderColor:bd.map(d=>RC[d.region]||C.blue),borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`${c.raw.label}(${c.raw.region})`,`平均分: ${c.raw.x}`,`标准差: ${c.raw.y}`,`A率: ${c.raw.a.toFixed(1)}%`]}}},
+    scales:{x:{min:30,max:100,title:{display:true,text:'平均分',color:C.muted},ticks:{color:C.muted},grid:{color:C.grid}},y:{min:0,max:38,title:{display:true,text:'标准差',color:C.muted},ticks:{color:C.muted},grid:{color:C.grid}}}}});
+  const lgd=document.getElementById('bubLgd');lgd.innerHTML='';
+  Object.entries(RC).filter(([k])=>SCHOOL.some(s=>s.r===k)).forEach(([k,v])=>lgd.innerHTML+=`<span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:50%;background:${v}77;border:1px solid ${v};display:inline-block"></span>${k}</span>`);
+}
+
+/* ════════════════════════════
+   学区专项
+════════════════════════════ */
+function renderDt(){
+  if(!SCHOOL.length)return;
+  document.getElementById('dt-e').style.display='none';
+  document.getElementById('dt-c').style.display='block';
+  refreshDt();buildDtCompare();
+}
+function setDtReg(reg,btn){
+  dtRegion=reg;
+  document.querySelectorAll('#dtSeg .sb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');refreshDt();
+}
+function refreshDt(){
+  if(!loaded)return;
+  const ss=SCHOOL.filter(s=>s.r===dtRegion).sort((a,b)=>b.avg-a.avg);
+  const col=RC[dtRegion]||C.blue;
+  const tot=ss.reduce((s,x)=>s+x.cnt,0);
+  const avgV=ss.length?+(ss.reduce((s,x)=>s+x.avg,0)/ss.length).toFixed(1):0;
+  const aV=ss.length?+(ss.reduce((s,x)=>s+x.a,0)/ss.length).toFixed(1):0;
+  const pV=ss.length?+(ss.reduce((s,x)=>s+x.p,0)/ss.length).toFixed(1):0;
+  document.getElementById('dtCards').innerHTML=[
+    {l:'学校总数',v:ss.length,u:'所',c:col},{l:'参考人数',v:tot.toLocaleString(),u:'人',c:C.cyan},
+    {l:'学区平均分',v:avgV,u:'分',c:C.amber},{l:'A率均值',v:aV+'%',u:'',c:C.green},
+  ].map(k=>`<div class="kpi" style="border-top-color:${k.c}"><div class="kpi-l">${k.l}</div><div class="kpi-v" style="color:${k.c}">${k.v}<span class="kpi-u">${k.u}</span></div></div>`).join('');
+  document.getElementById('dtRankTitle').textContent=`${dtRegion}学校排名`;
+  const maxA=Math.max(...ss.map(s=>s.avg));
+  let tbl=`<table class="rtbl"><thead><tr><th>#</th><th>学校</th><th>平均分</th><th>A率%</th><th>P率%</th><th style="width:80px">对比</th></tr></thead><tbody>`;
+  ss.forEach((s,i)=>{
+    const pct=maxA>0?(s.avg/maxA*100).toFixed(0):0;
+    tbl+=`<tr><td><span class="rn ${i===0?'g':i===1?'s':i===2?'b':''}">${i+1}</span></td>
+      <td style="font-weight:${i<3?'600':'400'};color:${i<3?C.amber:'inherit'}">${s.n}</td>
+      <td style="color:${C.blue};font-weight:500">${s.avg.toFixed(1)}</td>
+      <td style="color:${C.green}">${s.a.toFixed(1)}</td>
+      <td style="color:${C.amber}">${s.p.toFixed(1)}</td>
+      <td><div class="barmini"><div class="barfill" style="width:${pct}%;background:${col}"></div></div></td></tr>`;
+  });
+  tbl+='</tbody></table>';
+  document.getElementById('dtRankWrap').innerHTML=tbl;
+  const h=Math.max(ss.length*34+60,200);
+  document.getElementById('dtApWrap').style.height=h+'px';
+  dc('dtap');
+  charts['dtap']=new Chart(document.getElementById('c-dtap').getContext('2d'),{type:'bar',
+    data:{labels:ss.map(s=>s.n),datasets:[{label:'A率%',data:ss.map(s=>+s.a.toFixed(1)),backgroundColor:C.blue+'cc',borderRadius:2},{label:'P率%',data:ss.map(s=>+s.p.toFixed(1)),backgroundColor:C.green+'99',borderRadius:2}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}%`}}},scales:{x:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}},y:{ticks:{color:C.muted,font:{size:9}},grid:{color:C.grid}}}}});
+}
+function buildDtCompare(){
+  const regs=[...new Set(SCHOOL.map(s=>s.r))];
+  const data=regs.map(r=>{const ss=SCHOOL.filter(s=>s.r===r);return{r,avg:+(ss.reduce((a,s)=>a+s.avg,0)/ss.length).toFixed(1),a:+(ss.reduce((a,s)=>a+s.a,0)/ss.length).toFixed(1)};}).sort((a,b)=>b.avg-a.avg);
+  dc('dtcmp');
+  charts['dtcmp']=new Chart(document.getElementById('c-dtcmp').getContext('2d'),{type:'bar',
+    data:{labels:data.map(x=>x.r),datasets:[{label:'平均分',data:data.map(x=>x.avg),backgroundColor:data.map(x=>RC[x.r]||C.blue),borderRadius:4},{label:'A率%',data:data.map(x=>x.a),backgroundColor:data.map(x=>(RC[x.r]||C.blue)+'66'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.muted,font:{size:10},boxWidth:10}}},scales:{x:{ticks:{color:C.muted},grid:{color:C.grid}},y:{ticks:{color:C.muted},grid:{color:C.grid}}}}});
+}
+
+/* ════════════════════════════
+   知识诊断
+════════════════════════════ */
+function getWeakLit(){
+  if(!EXAM.length)return '—';
+  const m={};EXAM.forEach(d=>{if(!d.literacy)return;if(!m[d.literacy])m[d.literacy]={t:0,c:0};m[d.literacy].t+=d.rate;m[d.literacy].c++;});
+  const s=Object.entries(m).sort((a,b)=>(a[1].t/a[1].c)-(b[1].t/b[1].c));
+  return s[0]?s[0][0]:'—';
+}
+function renderKn(){
+  if(!EXAM.length)return;
+  document.getElementById('kn-e').style.display='none';
+  document.getElementById('kn-c').style.display='block';
+  const lm={};EXAM.forEach(d=>{if(!d.literacy)return;if(!lm[d.literacy])lm[d.literacy]={t:0,c:0};lm[d.literacy].t+=d.rate;lm[d.literacy].c++;});
+  const lits=Object.keys(lm);
+  const lRates=lits.map(k=>+(lm[k].t/lm[k].c).toFixed(1));
+
+  dc('rad');
+  charts['rad']=new Chart(document.getElementById('c-rad').getContext('2d'),{type:'radar',
+    data:{labels:lits,datasets:[{data:lRates,backgroundColor:'rgba(26,86,219,.1)',borderColor:C.blue,pointBackgroundColor:lRates.map(v=>v>=85?C.green:v>=70?C.blue:C.red),pointRadius:5,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:40,max:100,ticks:{color:C.muted,font:{size:9},backdropColor:'transparent'},grid:{color:C.grid},pointLabels:{color:C.muted,font:{size:10}}}}}});
+
+  const sorted=[...lits.map((k,i)=>({k,v:lRates[i]}))].sort((a,b)=>a.v-b.v);
+  dc('lit');
+  charts['lit']=new Chart(document.getElementById('c-lit').getContext('2d'),{type:'bar',
+    data:{labels:sorted.map(x=>x.k),datasets:[{data:sorted.map(x=>x.v),backgroundColor:sorted.map(x=>x.v>=85?C.green:x.v>=70?C.blue:C.red),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}%`}}},scales:{x:{min:40,max:100,ticks:{color:C.muted,callback:v=>v+'%'},grid:{color:C.grid}},y:{ticks:{color:C.muted,font:{size:10}},grid:{color:C.grid}}}}});
+
+  buildHm();
+
+  // 薄弱点速览
+  const weakItems=sorted.slice(0,3);
+  document.getElementById('weakPanel').innerHTML=
+    `<div style="margin-bottom:4px;color:var(--t3);font-size:10px">得分率最低的3个素养维度：</div>`+
+    weakItems.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0ebff">
+      <span>${x.k}</span>
+      <span class="b ${x.v>=70?'bw':'br'}" style="font-size:11px">${x.v}%</span>
+    </div>`).join('');
+}
+function buildHm(){
+  const domains=[...new Set(EXAM.filter(e=>e.domain).map(e=>e.domain))];
+  const topics=[...new Set(EXAM.filter(e=>e.topic).map(e=>e.topic))];
+  if(!domains.length){document.getElementById('hmBox').innerHTML='<p style="font-size:11px;color:var(--t3);padding:12px">需要表1命题明细数据以生成热力图</p>';return;}
+  let html=`<table style="border-collapse:separate;border-spacing:3px"><tr><td style="width:80px"></td>`;
+  topics.forEach(t=>{html+=`<td style="width:78px;text-align:center;vertical-align:bottom;padding-bottom:5px;font-size:9px;color:var(--t3);line-height:1.3">${t}</td>`;});
+  html+='</tr>';
+  domains.forEach(dom=>{
+    html+=`<tr><td style="font-size:10px;color:var(--t3);text-align:right;padding-right:6px;vertical-align:middle;height:52px">${dom}</td>`;
+    topics.forEach(top=>{
+      const items=EXAM.filter(e=>e.domain===dom&&e.topic===top);
+      if(!items.length){html+=`<td style="background:#f8fafd;border-radius:5px;height:52px"></td>`;return;}
+      const avg=items.reduce((s,d)=>s+d.rate,0)/items.length;
+      let bg,tc,brd;
+      if(avg>=85){bg=`rgba(5,122,85,${.1+(avg/100)*.7})`;tc='#03543f';brd='rgba(5,122,85,.4)';}
+      else if(avg>=70){bg=`rgba(26,86,219,${.1+(avg/100)*.6})`;tc='#1e3a8a';brd='rgba(26,86,219,.35)';}
+      else{bg=`rgba(224,36,36,${.1+(avg/100)*.7})`;tc='#7f1d1d';brd='rgba(224,36,36,.35)';}
+      html+=`<td title="${dom}×${top}: ${avg.toFixed(1)}% (${items.length}题)" style="background:${bg};border:1px solid ${brd};border-radius:5px;text-align:center;vertical-align:middle;cursor:pointer;height:52px">
+        <div style="font-size:13px;font-weight:700;color:${tc}">${avg.toFixed(0)}%</div>
+        <div style="font-size:9px;color:${tc};opacity:.75">${items.length}题</div>
+      </td>`;
+    });
+    html+='</tr>';
+  });
+  html+=`</table><div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--t3)">
+    <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;background:rgba(5,122,85,.5);border-radius:2px;display:inline-block"></span>优秀 ≥85%</span>
+    <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;background:rgba(26,86,219,.5);border-radius:2px;display:inline-block"></span>良好 70-85%</span>
+    <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;background:rgba(224,36,36,.5);border-radius:2px;display:inline-block"></span>薄弱 &lt;70%</span>
+  </div>`;
+  document.getElementById('hmBox').innerHTML=html;
+}
+
+/* ════════════════════════════
+   AI Report
+════════════════════════════ */
+function saveKey(){const k=document.getElementById('aiKey').value.trim();if(k){window._DSK=k;document.getElementById('aiOut').textContent='API Key 已保存，可以生成报告。';}}
+async function genReport(){
+  const key=window._DSK||document.getElementById('aiKey').value.trim();
+  if(!key){document.getElementById('aiOut').textContent='请先输入 DeepSeek API Key';return;}
+  window._DSK=key;
+  const tp=document.getElementById('aiTp').value,reg=document.getElementById('aiReg').value;
+  const btn=document.getElementById('genBtn');btn.disabled=true;
+  const out=document.getElementById('aiOut');out.textContent='正在分析数据...\n';
+  const lm={};EXAM.forEach(d=>{if(!d.literacy)return;if(!lm[d.literacy])lm[d.literacy]={t:0,c:0};lm[d.literacy].t+=d.rate;lm[d.literacy].c++;});
+  const litStr=Object.entries(lm).map(([k,v])=>`${k}:${(v.t/v.c).toFixed(1)}%`).join('、');
+  const tot=SCHOOL.reduce((s,x)=>s+x.cnt,0);
+  const wavg=tot>0?+(SCHOOL.reduce((s,x)=>s+x.avg*x.cnt,0)/tot).toFixed(1):0;
+  let ctx=tp==='district'
+    ?`全市：${SCHOOL.length}所学校，${tot}人，加权平均分${wavg}，A率均值${+(SCHOOL.reduce((s,x)=>s+x.a,0)/SCHOOL.length).toFixed(1)}%，P率均值${+(SCHOOL.reduce((s,x)=>s+x.p,0)/SCHOOL.length).toFixed(1)}%。`
+    :(()=>{const ss=SCHOOL.filter(s=>s.r===reg);const av=+(ss.reduce((s,x)=>s+x.avg,0)/ss.length).toFixed(1);const top=[...ss].sort((a,b)=>b.avg-a.avg).slice(0,3).map(s=>`${s.n}(${s.avg.toFixed(1)})`).join('、');return `${reg}：${ss.length}校，均分${av}，前三：${top}。`;})();
+  const prompt=`你是一位经验丰富的小学数学教研专家，请根据以下监测数据生成一份专业的教学诊断报告（约500字，中文）：\n\n${ctx}\n素养得分率：${litStr}\n\n请从：①整体水平评价 ②优势领域 ③薄弱环节诊断 ④针对性教学改进建议 四个角度撰写，语言专业、具体、可操作。`;
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],stream:true,max_tokens:1000})});
+    if(!resp.ok){out.textContent='API请求失败，请检查Key';btn.disabled=false;return;}
+    out.textContent='';
+    const reader=resp.body.getReader();const dec=new TextDecoder();
+    while(true){const{done,value}=await reader.read();if(done)break;const ch=dec.decode(value);const lines=ch.split('\n').filter(l=>l.startsWith('data:'));for(const line of lines){const j=line.slice(5).trim();if(j==='[DONE]')continue;try{const d=JSON.parse(j);out.textContent+=d.choices?.[0]?.delta?.content||'';}catch(e){}}}
+  }catch(e){out.textContent='网络错误：'+e.message;}
+  btn.disabled=false;
+}
+
+/* ════════════════════════════
+   Template Download
+════════════════════════════ */
+function dlTpl(type){
+  if(typeof XLSX==='undefined'){alert('SheetJS未加载');return;}
+  let wb,fn;
+  if(type==='t3'){
+    const header1=['所属区域','学校','统计人数','满分人数',100,'100以上','95-100以下','95-100','90-95以下','90-95','85-90以下','85-90','80-85以下','80-85','75-80以下','75-80','70-75以下','70-75','65-70以下','65-70','60-65以下','60-65','55-60以下','55-60','50-55以下','50-55','45-50以下','45-50','40-45以下','40-45','40以下','40以下'];
+    const header2=[null,null,'统计人数','满分人数','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比','人数','占比'];
+    const sample=['直属','示例学校',100,5,5,5,30,30,25,25,20,20,10,10,5,5,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0];
+    const ws=XLSX.utils.aoa_to_sheet([header1,header2,sample]);
+    wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'分数段人数');
+    fn='表3-分数段人数及占比-模板.xlsx';
+  }else{
+    const header1=['所属区域','学校','统计人数','满分人数','最高分','最低分','全距','中位数','标准差','差异系数','离均差','超均率','平均分','平均分','A率，前20%','A率，前20%','A率，前20%','P率，前80%','P率，前80%','P率，前80%'];
+    const header2=[null,'学校','统计人数','满分人数','最高分','最低分','全距','中位数','标准差','差异系数','离均差','超均率','平均分','排名','人数','比率','排名','人数','比率','排名'];
+    const sample=['直属','示例学校',100,5,100,30,70,82,12.5,0.15,4.5,0.12,77.4,1,20,20.0,1,82,82.0,1];
+    const ws=XLSX.utils.aoa_to_sheet([header1,header2,sample]);
+    wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'基础指标对比');
+    fn='表4-基础指标对比-模板.xlsx';
+  }
+  XLSX.writeFile(wb,fn);
+}
+
+/* ════════════════════════════
+   BUILTIN DATA
+════════════════════════════ */
+const BUILTIN_SCHOOL=[{"r": "直属", "n": "瑞安市瑞祥实验学校（小学）", "cnt": 341, "fullScore": 36, "hi": 100.0, "lo": 4.0, "med": 95.0, "std": 9.2497, "avg": 92.43, "a": 55.43, "p": 98.53}, {"r": "直属", "n": "瑞安市集云实验学校小学部", "cnt": 255, "fullScore": 11, "hi": 100.0, "lo": 21.0, "med": 93.0, "std": 9.508, "avg": 90.58, "a": 40.78, "p": 98.04}, {"r": "直属", "n": "瑞安市外国语小学", "cnt": 310, "fullScore": 25, "hi": 100.0, "lo": 11.0, "med": 93.0, "std": 12.0241, "avg": 89.78, "a": 43.87, "p": 97.1}, {"r": "直属", "n": "瑞安市马鞍山实验小学", "cnt": 256, "fullScore": 13, "hi": 100.0, "lo": 22.0, "med": 92.0, "std": 9.717, "avg": 89.57, "a": 31.64, "p": 97.27}, {"r": "直属", "n": "瑞安市实验小学", "cnt": 262, "fullScore": 17, "hi": 100.0, "lo": 4.0, "med": 94.0, "std": 14.1711, "avg": 89.42, "a": 45.8, "p": 95.04}, {"r": "直属", "n": "瑞安市阳光小学", "cnt": 178, "fullScore": 6, "hi": 100.0, "lo": 21.0, "med": 92.0, "std": 11.7917, "avg": 88.78, "a": 37.64, "p": 97.19}, {"r": "直属", "n": "瑞安市新纪元小学", "cnt": 538, "fullScore": 29, "hi": 100.0, "lo": 22.0, "med": 92.0, "std": 12.2099, "avg": 88.44, "a": 37.92, "p": 95.35}, {"r": "直属", "n": "瑞安市安阳实验小学", "cnt": 436, "fullScore": 19, "hi": 100.0, "lo": 10.0, "med": 91.0, "std": 13.6704, "avg": 87.22, "a": 33.03, "p": 93.81}, {"r": "安阳学区", "n": "瑞安市玉海中心小学", "cnt": 178, "fullScore": 5, "hi": 100.0, "lo": 4.0, "med": 92.0, "std": 16.235, "avg": 86.5, "a": 35.39, "p": 90.45}, {"r": "安阳学区", "n": "瑞安市隆山实验小学", "cnt": 257, "fullScore": 9, "hi": 100.0, "lo": 7.0, "med": 91.5, "std": 16.518, "avg": 86.2, "a": 39.3, "p": 92.61}, {"r": "直属", "n": "瑞安市第二实验小学", "cnt": 255, "fullScore": 11, "hi": 100.0, "lo": 25.0, "med": 89.0, "std": 13.7149, "avg": 85.33, "a": 29.41, "p": 92.55}, {"r": "飞云学区", "n": "瑞安市飞云中心小学", "cnt": 259, "fullScore": 10, "hi": 100.0, "lo": 19.5, "med": 90.0, "std": 15.0639, "avg": 84.51, "a": 27.41, "p": 89.19}, {"r": "直属", "n": "瑞安市第三实验小学", "cnt": 165, "fullScore": 5, "hi": 100.0, "lo": 13.0, "med": 89.0, "std": 16.9711, "avg": 84.0, "a": 25.45, "p": 90.91}, {"r": "莘塍学区", "n": "瑞安市莘塍实验小学", "cnt": 262, "fullScore": 9, "hi": 100.0, "lo": 9.0, "med": 89.0, "std": 16.0761, "avg": 83.96, "a": 29.01, "p": 90.46}, {"r": "莘塍学区", "n": "瑞安市汀田实验小学", "cnt": 307, "fullScore": 9, "hi": 100.0, "lo": 5.0, "med": 89.5, "std": 18.4878, "avg": 83.12, "a": 25.41, "p": 89.25}, {"r": "塘下学区", "n": "瑞安市塘下镇中心小学", "cnt": 330, "fullScore": 4, "hi": 100.0, "lo": 7.0, "med": 88.0, "std": 16.6012, "avg": 82.65, "a": 23.33, "p": 87.27}, {"r": "安阳学区", "n": "瑞安市虹桥路小学", "cnt": 179, "fullScore": 4, "hi": 100.0, "lo": 4.0, "med": 88.0, "std": 18.4171, "avg": 82.46, "a": 23.46, "p": 87.15}, {"r": "莘塍学区", "n": "瑞安市莘塍第二小学", "cnt": 220, "fullScore": 0, "hi": 99.0, "lo": 3.0, "med": 88.0, "std": 17.0436, "avg": 82.31, "a": 23.18, "p": 88.18}, {"r": "塘下学区", "n": "瑞安市塘下镇鲍田中心小学", "cnt": 126, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 87.5, "std": 18.9627, "avg": 81.58, "a": 20.63, "p": 89.68}, {"r": "直属", "n": "瑞安市万松实验小学", "cnt": 261, "fullScore": 5, "hi": 100.0, "lo": 6.0, "med": 87.0, "std": 17.1306, "avg": 81.57, "a": 19.92, "p": 87.74}, {"r": "安阳学区", "n": "瑞安市广场实验小学", "cnt": 261, "fullScore": 4, "hi": 100.0, "lo": 6.0, "med": 87.0, "std": 18.3816, "avg": 81.43, "a": 26.44, "p": 85.82}, {"r": "安阳学区", "n": "瑞安市红旗实验小学", "cnt": 310, "fullScore": 9, "hi": 100.0, "lo": 4.0, "med": 88.0, "std": 18.9463, "avg": 81.34, "a": 26.77, "p": 85.48}, {"r": "飞云学区", "n": "瑞安市阁巷小学", "cnt": 219, "fullScore": 8, "hi": 100.0, "lo": 9.0, "med": 89.0, "std": 21.5261, "avg": 80.62, "a": 28.77, "p": 84.02}, {"r": "马屿学区", "n": "瑞安市马屿镇第二小学", "cnt": 126, "fullScore": 2, "hi": 100.0, "lo": 4.0, "med": 89.0, "std": 21.4375, "avg": 80.37, "a": 28.57, "p": 84.92}, {"r": "安阳学区", "n": "瑞安市上望第一小学", "cnt": 130, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 88.75, "std": 20.3321, "avg": 80.32, "a": 20.0, "p": 84.62}, {"r": "马屿学区", "n": "瑞安市马屿镇中心小学", "cnt": 266, "fullScore": 2, "hi": 100.0, "lo": 3.0, "med": 88.0, "std": 19.7686, "avg": 80.13, "a": 16.17, "p": 84.59}, {"r": "塘下学区", "n": "瑞安市塘下镇新华小学", "cnt": 175, "fullScore": 4, "hi": 100.0, "lo": 2.0, "med": 86.0, "std": 20.1305, "avg": 80.0, "a": 25.71, "p": 85.14}, {"r": "塘下学区", "n": "瑞安市塘下实验小学", "cnt": 256, "fullScore": 5, "hi": 100.0, "lo": 3.0, "med": 87.0, "std": 20.265, "avg": 79.88, "a": 17.58, "p": 84.77}, {"r": "马屿学区", "n": "瑞安市曹村镇学校（小学）", "cnt": 183, "fullScore": 0, "hi": 99.0, "lo": 9.0, "med": 87.0, "std": 20.2217, "avg": 79.64, "a": 15.85, "p": 85.25}, {"r": "莘塍学区", "n": "瑞安市莘塍中心小学", "cnt": 293, "fullScore": 3, "hi": 100.0, "lo": 5.0, "med": 87.0, "std": 20.3118, "avg": 79.33, "a": 17.41, "p": 83.96}, {"r": "安阳学区", "n": "瑞安市滨江小学", "cnt": 176, "fullScore": 5, "hi": 100.0, "lo": 12.0, "med": 88.0, "std": 21.3241, "avg": 79.25, "a": 21.59, "p": 81.82}, {"r": "莘塍学区", "n": "瑞安市汀田第三小学", "cnt": 72, "fullScore": 0, "hi": 99.0, "lo": 8.0, "med": 84.0, "std": 19.592, "avg": 78.65, "a": 16.67, "p": 80.56}, {"r": "安阳学区", "n": "瑞安市锦湖实验小学", "cnt": 178, "fullScore": 3, "hi": 100.0, "lo": 4.0, "med": 85.5, "std": 21.0061, "avg": 78.54, "a": 21.35, "p": 80.9}, {"r": "飞云学区", "n": "瑞安市仙降中心小学", "cnt": 345, "fullScore": 2, "hi": 100.0, "lo": 5.0, "med": 85.0, "std": 19.562, "avg": 78.49, "a": 13.04, "p": 84.64}, {"r": "安阳学区", "n": "瑞安市潘岱学校", "cnt": 61, "fullScore": 0, "hi": 98.0, "lo": 47.5, "med": 81.0, "std": 13.7254, "avg": 78.31, "a": 9.84, "p": 83.61}, {"r": "塘下学区", "n": "瑞安市塘下镇罗凤第二小学", "cnt": 198, "fullScore": 8, "hi": 100.0, "lo": 2.0, "med": 86.0, "std": 21.2639, "avg": 78.0, "a": 20.71, "p": 77.78}, {"r": "塘下学区", "n": "瑞安市塘下镇场桥中心小学", "cnt": 158, "fullScore": 4, "hi": 100.0, "lo": 8.0, "med": 87.0, "std": 22.9705, "avg": 77.98, "a": 18.35, "p": 79.11}, {"r": "塘下学区", "n": "瑞安市塘下镇第四小学", "cnt": 122, "fullScore": 6, "hi": 100.0, "lo": 8.0, "med": 81.75, "std": 19.6928, "avg": 76.93, "a": 15.57, "p": 78.69}, {"r": "直属", "n": "瑞安市紫荆书院", "cnt": 30, "fullScore": 0, "hi": 96.0, "lo": 23.0, "med": 84.0, "std": 19.4464, "avg": 76.57, "a": 16.67, "p": 76.67}, {"r": "安阳学区", "n": "瑞安市毓蒙小学", "cnt": 180, "fullScore": 2, "hi": 100.0, "lo": 2.5, "med": 82.0, "std": 20.4197, "avg": 76.52, "a": 11.11, "p": 80.56}, {"r": "湖岭学区", "n": "瑞安市芳庄乡学校", "cnt": 22, "fullScore": 1, "hi": 100.0, "lo": 2.0, "med": 87.0, "std": 27.9528, "avg": 76.23, "a": 18.18, "p": 81.82}, {"r": "湖岭学区", "n": "瑞安市湖岭镇中心小学", "cnt": 260, "fullScore": 3, "hi": 100.0, "lo": 3.0, "med": 83.5, "std": 21.7896, "avg": 76.03, "a": 14.62, "p": 80.38}, {"r": "莘塍学区", "n": "瑞安市汀田第五小学", "cnt": 38, "fullScore": 0, "hi": 99.0, "lo": 7.0, "med": 84.0, "std": 23.0153, "avg": 75.99, "a": 23.68, "p": 78.95}, {"r": "安阳学区", "n": "瑞安市玉海第二小学", "cnt": 174, "fullScore": 0, "hi": 99.0, "lo": 4.0, "med": 83.0, "std": 20.9501, "avg": 75.4, "a": 7.47, "p": 76.44}, {"r": "飞云学区", "n": "瑞安市云周中心小学", "cnt": 221, "fullScore": 2, "hi": 100.0, "lo": 16.0, "med": 81.0, "std": 19.8947, "avg": 75.12, "a": 14.03, "p": 73.3}, {"r": "塘下学区", "n": "瑞安市塘下镇罗凤第三小学", "cnt": 76, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 79.0, "std": 18.056, "avg": 74.82, "a": 9.21, "p": 76.32}, {"r": "陶山学区", "n": "瑞安市陶山镇中心小学", "cnt": 326, "fullScore": 6, "hi": 100.0, "lo": 8.0, "med": 84.0, "std": 22.9959, "avg": 74.8, "a": 15.95, "p": 75.15}, {"r": "塘下学区", "n": "瑞安市塘下镇鲍七小学", "cnt": 67, "fullScore": 2, "hi": 100.0, "lo": 37.0, "med": 78.0, "std": 17.9153, "avg": 74.73, "a": 10.45, "p": 76.12}, {"r": "塘下学区", "n": "瑞安市塘下镇鲍三小学", "cnt": 71, "fullScore": 0, "hi": 99.0, "lo": 11.5, "med": 81.0, "std": 20.259, "avg": 74.7, "a": 7.04, "p": 74.65}, {"r": "马屿学区", "n": "瑞安市养正学校", "cnt": 106, "fullScore": 0, "hi": 99.0, "lo": 4.0, "med": 83.0, "std": 23.6848, "avg": 74.21, "a": 13.21, "p": 77.36}, {"r": "飞云学区", "n": "瑞安市飞云第二小学", "cnt": 216, "fullScore": 2, "hi": 100.0, "lo": 1.0, "med": 82.0, "std": 23.2387, "avg": 74.03, "a": 15.28, "p": 76.39}, {"r": "直属", "n": "瑞安市云江实验小学", "cnt": 125, "fullScore": 0, "hi": 98.0, "lo": 20.0, "med": 77.5, "std": 19.4375, "avg": 73.7, "a": 13.6, "p": 76.0}, {"r": "安阳学区", "n": "瑞安市解放路小学", "cnt": 133, "fullScore": 3, "hi": 100.0, "lo": 7.0, "med": 82.0, "std": 24.0022, "avg": 73.68, "a": 14.29, "p": 75.19}, {"r": "塘下学区", "n": "瑞安市塘下镇海安学校（小学）", "cnt": 166, "fullScore": 1, "hi": 100.0, "lo": 8.0, "med": 79.75, "std": 21.1968, "avg": 73.65, "a": 12.05, "p": 72.89}, {"r": "飞云学区", "n": "瑞安市江南实验小学", "cnt": 255, "fullScore": 2, "hi": 100.0, "lo": 4.0, "med": 81.5, "std": 23.3847, "avg": 73.48, "a": 13.73, "p": 75.29}, {"r": "安阳学区", "n": "瑞安市锦湖实验小学沙河校区", "cnt": 80, "fullScore": 5, "hi": 100.0, "lo": 7.0, "med": 80.5, "std": 24.4426, "avg": 73.45, "a": 17.5, "p": 72.5}, {"r": "安阳学区", "n": "瑞安市东山学校", "cnt": 165, "fullScore": 1, "hi": 100.0, "lo": 8.0, "med": 80.0, "std": 21.4457, "avg": 73.31, "a": 8.48, "p": 75.15}, {"r": "安阳学区", "n": "瑞安市上望第五小学", "cnt": 75, "fullScore": 0, "hi": 99.0, "lo": 5.0, "med": 81.0, "std": 24.7092, "avg": 72.95, "a": 9.33, "p": 76.0}, {"r": "飞云学区", "n": "瑞安市仙降中心小学双岙校区", "cnt": 99, "fullScore": 1, "hi": 100.0, "lo": 16.0, "med": 78.0, "std": 20.5548, "avg": 72.63, "a": 10.1, "p": 70.71}, {"r": "湖岭学区", "n": "瑞安市湖岭镇第二小学", "cnt": 127, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 77.0, "std": 22.2273, "avg": 72.36, "a": 11.02, "p": 74.8}, {"r": "莘塍学区", "n": "瑞安市莘塍第三实验小学", "cnt": 155, "fullScore": 0, "hi": 99.0, "lo": 7.0, "med": 77.5, "std": 21.2734, "avg": 71.99, "a": 8.39, "p": 75.48}, {"r": "马屿学区", "n": "瑞安市马屿镇中心小学跃马校区", "cnt": 85, "fullScore": 0, "hi": 99.0, "lo": 5.0, "med": 83.0, "std": 26.2625, "avg": 71.16, "a": 21.18, "p": 70.59}, {"r": "莘塍学区", "n": "瑞安市汀田中心小学", "cnt": 89, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 79.0, "std": 23.1559, "avg": 70.84, "a": 8.99, "p": 66.29}, {"r": "塘下学区", "n": "瑞安市塘下镇罗凤中心小学", "cnt": 162, "fullScore": 0, "hi": 99.0, "lo": 4.0, "med": 78.0, "std": 24.7931, "avg": 70.72, "a": 14.81, "p": 69.75}, {"r": "安阳学区", "n": "瑞安市锦湖第二小学", "cnt": 56, "fullScore": 0, "hi": 98.0, "lo": 9.0, "med": 73.5, "std": 21.3103, "avg": 70.32, "a": 12.5, "p": 69.64}, {"r": "塘下学区", "n": "瑞安市塘下镇场桥第二小学", "cnt": 161, "fullScore": 2, "hi": 100.0, "lo": 6.0, "med": 79.0, "std": 24.717, "avg": 70.3, "a": 10.56, "p": 69.57}, {"r": "莘塍学区", "n": "瑞安市莘塍第六小学", "cnt": 81, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 76.5, "std": 23.7854, "avg": 69.9, "a": 11.11, "p": 70.37}, {"r": "飞云学区", "n": "瑞安市林垟学校（小学）", "cnt": 116, "fullScore": 0, "hi": 99.0, "lo": 13.0, "med": 76.0, "std": 24.0016, "avg": 69.78, "a": 10.34, "p": 72.41}, {"r": "安阳学区", "n": "瑞安市上望第二小学", "cnt": 234, "fullScore": 1, "hi": 100.0, "lo": 4.0, "med": 77.75, "std": 24.9183, "avg": 69.69, "a": 9.83, "p": 67.95}, {"r": "安阳学区", "n": "瑞安市红旗实验小学河埭校区", "cnt": 29, "fullScore": 0, "hi": 94.0, "lo": 4.0, "med": 77.0, "std": 22.3888, "avg": 69.66, "a": 0.0, "p": 72.41}, {"r": "飞云学区", "n": "瑞安市云周周苌小学", "cnt": 127, "fullScore": 1, "hi": 100.0, "lo": 8.0, "med": 77.0, "std": 23.4736, "avg": 69.29, "a": 8.66, "p": 65.35}, {"r": "湖岭学区", "n": "瑞安市林川镇学校", "cnt": 20, "fullScore": 0, "hi": 97.0, "lo": 14.0, "med": 76.5, "std": 27.1719, "avg": 69.03, "a": 25.0, "p": 60.0}, {"r": "塘下学区", "n": "瑞安市塘下镇罗凤中心小学前庄校区", "cnt": 67, "fullScore": 0, "hi": 98.0, "lo": 5.0, "med": 74.0, "std": 23.2486, "avg": 68.98, "a": 4.48, "p": 70.15}, {"r": "飞云学区", "n": "瑞安市仙降第二小学", "cnt": 119, "fullScore": 1, "hi": 100.0, "lo": 4.0, "med": 75.0, "std": 21.0713, "avg": 68.95, "a": 4.2, "p": 69.75}, {"r": "陶山学区", "n": "瑞安市陶山镇碧山小学", "cnt": 154, "fullScore": 1, "hi": 100.0, "lo": 3.0, "med": 77.0, "std": 25.15, "avg": 68.67, "a": 12.99, "p": 68.18}, {"r": "陶山学区", "n": "瑞安市陶山镇丰和小学", "cnt": 48, "fullScore": 0, "hi": 98.0, "lo": 4.0, "med": 75.5, "std": 23.4154, "avg": 68.54, "a": 8.33, "p": 68.75}, {"r": "莘塍学区", "n": "瑞安市莘塍第七小学", "cnt": 112, "fullScore": 0, "hi": 99.0, "lo": 4.0, "med": 76.0, "std": 24.0407, "avg": 68.5, "a": 12.5, "p": 68.75}, {"r": "高楼学区", "n": "瑞安市高楼镇中心小学", "cnt": 145, "fullScore": 1, "hi": 100.0, "lo": 1.0, "med": 77.0, "std": 26.1199, "avg": 68.14, "a": 11.03, "p": 69.66}, {"r": "马屿学区", "n": "瑞安市马屿镇梅屿学校（小学）", "cnt": 89, "fullScore": 1, "hi": 100.0, "lo": 4.0, "med": 79.0, "std": 28.1906, "avg": 68.0, "a": 6.74, "p": 68.54}, {"r": "塘下学区", "n": "瑞安市塘下镇第二小学", "cnt": 143, "fullScore": 0, "hi": 99.0, "lo": 2.0, "med": 74.0, "std": 25.4363, "avg": 67.93, "a": 9.09, "p": 65.04}, {"r": "高楼学区", "n": "瑞安市高楼镇东岩学校（小学）", "cnt": 31, "fullScore": 0, "hi": 98.0, "lo": 3.0, "med": 73.0, "std": 27.9794, "avg": 67.68, "a": 19.35, "p": 70.97}, {"r": "陶山学区", "n": "瑞安市桐浦镇中心小学桐溪校区", "cnt": 28, "fullScore": 1, "hi": 100.0, "lo": 7.0, "med": 76.0, "std": 25.7261, "avg": 67.57, "a": 3.57, "p": 67.86}, {"r": "马屿学区", "n": "瑞安市马屿镇中心小学顺泰校区", "cnt": 38, "fullScore": 1, "hi": 100.0, "lo": 6.0, "med": 80.0, "std": 29.7338, "avg": 66.88, "a": 15.79, "p": 68.42}, {"r": "莘塍学区", "n": "瑞安市汀田第二小学", "cnt": 127, "fullScore": 2, "hi": 100.0, "lo": 5.0, "med": 75.0, "std": 28.6113, "avg": 66.14, "a": 13.39, "p": 69.29}, {"r": "陶山学区", "n": "瑞安市桐浦镇中心小学", "cnt": 76, "fullScore": 1, "hi": 100.0, "lo": 13.0, "med": 64.0, "std": 22.8607, "avg": 65.71, "a": 6.58, "p": 53.95}, {"r": "塘下学区", "n": "瑞安市塘下镇下林小学", "cnt": 74, "fullScore": 0, "hi": 98.0, "lo": 3.0, "med": 75.0, "std": 27.2183, "avg": 64.62, "a": 4.05, "p": 64.86}, {"r": "飞云学区", "n": "瑞安市仙降江溪小学", "cnt": 82, "fullScore": 1, "hi": 100.0, "lo": 2.0, "med": 72.5, "std": 26.4889, "avg": 64.4, "a": 7.32, "p": 59.76}, {"r": "陶山学区", "n": "瑞安市陶山镇荆谷学校", "cnt": 106, "fullScore": 1, "hi": 100.0, "lo": 5.0, "med": 71.75, "std": 27.4341, "avg": 64.09, "a": 4.72, "p": 62.26}, {"r": "安阳学区", "n": "瑞安市东山第四小学", "cnt": 77, "fullScore": 0, "hi": 96.0, "lo": 2.0, "med": 72.0, "std": 26.6087, "avg": 63.68, "a": 3.9, "p": 61.04}, {"r": "陶山学区", "n": "瑞安市陶山镇碧山小学横塘校区", "cnt": 20, "fullScore": 0, "hi": 94.0, "lo": 15.0, "med": 59.0, "std": 25.1264, "avg": 62.98, "a": 0.0, "p": 50.0}, {"r": "飞云学区", "n": "瑞安市侨贸学校", "cnt": 157, "fullScore": 2, "hi": 100.0, "lo": 9.0, "med": 68.0, "std": 23.1271, "avg": 62.93, "a": 5.73, "p": 53.5}, {"r": "塘下学区", "n": "瑞安市塘下镇第三小学", "cnt": 228, "fullScore": 1, "hi": 100.0, "lo": 4.0, "med": 73.0, "std": 27.4726, "avg": 62.78, "a": 6.58, "p": 60.09}, {"r": "湖岭学区", "n": "瑞安市湖岭镇鹿木学校（小学）", "cnt": 48, "fullScore": 0, "hi": 95.0, "lo": 6.0, "med": 70.0, "std": 25.8637, "avg": 62.66, "a": 2.08, "p": 62.5}, {"r": "安阳学区", "n": "瑞安市东山第三小学", "cnt": 39, "fullScore": 0, "hi": 96.0, "lo": 6.0, "med": 68.0, "std": 25.5534, "avg": 62.17, "a": 2.56, "p": 53.85}, {"r": "塘下学区", "n": "瑞安市塘下镇鲍四小学", "cnt": 74, "fullScore": 0, "hi": 99.0, "lo": 3.0, "med": 66.0, "std": 27.0738, "avg": 62.07, "a": 9.46, "p": 55.41}, {"r": "高楼学区", "n": "瑞安市平阳坑镇学校（小学）", "cnt": 34, "fullScore": 0, "hi": 99.0, "lo": 3.0, "med": 67.5, "std": 29.6077, "avg": 60.82, "a": 8.82, "p": 52.94}, {"r": "马屿学区", "n": "瑞安市曹村镇第二小学", "cnt": 42, "fullScore": 0, "hi": 95.0, "lo": 4.0, "med": 61.5, "std": 27.8215, "avg": 59.23, "a": 2.38, "p": 47.62}, {"r": "安阳学区", "n": "瑞安市上望第四小学", "cnt": 68, "fullScore": 0, "hi": 99.0, "lo": 5.0, "med": 66.0, "std": 27.0928, "avg": 58.68, "a": 4.41, "p": 55.88}, {"r": "飞云学区", "n": "瑞安市仙降第三小学", "cnt": 79, "fullScore": 0, "hi": 96.0, "lo": 5.0, "med": 61.0, "std": 24.5615, "avg": 58.19, "a": 2.53, "p": 46.84}, {"r": "高楼学区", "n": "瑞安市高楼镇高楼学校（小学）", "cnt": 62, "fullScore": 0, "hi": 97.0, "lo": 2.0, "med": 59.5, "std": 28.4986, "avg": 57.67, "a": 9.68, "p": 46.77}, {"r": "塘下学区", "n": "瑞安市塘下镇上马小学", "cnt": 86, "fullScore": 0, "hi": 98.0, "lo": 6.0, "med": 62.75, "std": 31.2446, "avg": 57.59, "a": 10.47, "p": 50.0}, {"r": "莘塍学区", "n": "瑞安市莘塍东新学校（小学）", "cnt": 73, "fullScore": 0, "hi": 98.0, "lo": 7.0, "med": 66.0, "std": 25.5249, "avg": 56.83, "a": 4.11, "p": 53.42}, {"r": "塘下学区", "n": "瑞安市塘下镇鲍二小学", "cnt": 52, "fullScore": 0, "hi": 99.0, "lo": 1.0, "med": 64.5, "std": 30.86, "avg": 55.61, "a": 7.69, "p": 50.0}, {"r": "飞云学区", "n": "瑞安市仙降第三小学下社校区", "cnt": 109, "fullScore": 1, "hi": 100.0, "lo": 5.0, "med": 47.5, "std": 26.0482, "avg": 49.7, "a": 2.75, "p": 31.19}, {"r": "高楼学区", "n": "瑞安市高楼镇中心小学枫岭校区", "cnt": 5, "fullScore": 0, "hi": 83.0, "lo": 8.0, "med": 49.5, "std": 24.7253, "avg": 48.6, "a": 0.0, "p": 20.0}, {"r": "陶山学区", "n": "瑞安市桐浦镇中心小学沙岙校区", "cnt": 11, "fullScore": 0, "hi": 84.0, "lo": 13.0, "med": 44.5, "std": 24.4585, "avg": 42.91, "a": 0.0, "p": 27.27}, {"r": "高楼学区", "n": "瑞安市高楼镇中心小学宁益校区", "cnt": 3, "fullScore": 0, "hi": 78.0, "lo": 11.0, "med": 20.0, "std": 29.691, "avg": 36.33, "a": 0.0, "p": 33.33}];
+const BUILTIN_SDIST=[{"range": "100", "count": 348}, {"range": "95-100", "count": 2904}, {"range": "90-95", "count": 2917}, {"range": "85-90", "count": 2090}, {"range": "80-85", "count": 1539}, {"range": "75-80", "count": 1189}, {"range": "70-75", "count": 941}, {"range": "65-70", "count": 698}, {"range": "60-65", "count": 555}, {"range": "55-60", "count": 428}, {"range": "50-55", "count": 362}, {"range": "45-50", "count": 323}, {"range": "40-45", "count": 235}, {"range": "<40", "count": 1408}];
+const BUILTIN_EXAM=[
+  {t:'T1',s:2,avg:1.84,rate:92.11,diff:.9211,disc:.2463,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T2',s:2,avg:1.48,rate:74.25,diff:.7425,disc:.4116,domain:'图形与几何',topic:'图形的认识与测量',literacy:'量感'},
+  {t:'T3',s:2,avg:1.00,rate:50.20,diff:.5020,disc:.2969,domain:'图形与几何',topic:'图形的认识与测量',literacy:'模型意识'},
+  {t:'T4',s:2,avg:1.45,rate:72.69,diff:.7269,disc:.4929,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T5',s:2,avg:1.58,rate:78.90,diff:.7890,disc:.4167,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T6',s:2,avg:1.89,rate:94.46,diff:.9446,disc:.1543,domain:'图形与几何',topic:'图形的位置与运动',literacy:'空间观念'},
+  {t:'T7',s:2,avg:1.65,rate:82.73,diff:.8273,disc:.4715,domain:'数与代数',topic:'数量关系',literacy:'模型意识'},
+  {t:'T8',s:2,avg:1.51,rate:75.59,diff:.7559,disc:.6082,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T9',s:2,avg:1.39,rate:69.40,diff:.6940,disc:.4376,domain:'图形与几何',topic:'图形的认识与测量',literacy:'几何直观'},
+  {t:'T10',s:2,avg:1.50,rate:75.23,diff:.7523,disc:.4501,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T11',s:2,avg:1.82,rate:90.94,diff:.9094,disc:.2288,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T12',s:2,avg:1.81,rate:90.34,diff:.9034,disc:.3165,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T13',s:2,avg:1.36,rate:67.80,diff:.6780,disc:.6619,domain:'数与代数',topic:'数与运算',literacy:'应用意识'},
+  {t:'T14',s:2,avg:1.15,rate:57.55,diff:.5755,disc:.7521,domain:'数与代数',topic:'数量关系',literacy:'模型意识'},
+  {t:'T15',s:2,avg:.96,rate:47.85,diff:.4785,disc:.5500,domain:'数与代数',topic:'数与运算',literacy:'数感'},
+  {t:'T16',s:2,avg:1.72,rate:85.92,diff:.8592,disc:.4563,domain:'图形与几何',topic:'图形的认识与测量',literacy:'应用意识'},
+  {t:'T17',s:2,avg:1.65,rate:82.33,diff:.8233,disc:.5158,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T18',s:2,avg:1.38,rate:68.93,diff:.6893,disc:.7555,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T19',s:2,avg:1.26,rate:62.84,diff:.6284,disc:.6776,domain:'图形与几何',topic:'图形的认识与测量',literacy:'空间观念'},
+  {t:'T20',s:2,avg:1.28,rate:64.07,diff:.6407,disc:.7267,domain:'数与代数',topic:'数量关系',literacy:'推理意识'},
+  {t:'T21.1',s:2,avg:1.84,rate:91.79,diff:.9179,disc:.2024,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T21.2',s:2,avg:1.89,rate:94.60,diff:.9460,disc:.1626,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T21.3',s:2,avg:1.73,rate:86.66,diff:.8666,disc:.3587,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T21.4',s:2,avg:1.68,rate:83.80,diff:.8380,disc:.4543,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T22.1',s:3,avg:2.61,rate:86.83,diff:.8683,disc:.3717,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T22.2',s:3,avg:2.33,rate:77.58,diff:.7758,disc:.5922,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T22.3',s:3,avg:2.52,rate:84.16,diff:.8416,disc:.4630,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T22.4',s:3,avg:2.43,rate:80.94,diff:.8094,disc:.4670,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T23.1',s:3,avg:2.67,rate:88.84,diff:.8884,disc:.3171,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T23.2',s:3,avg:2.48,rate:82.66,diff:.8266,disc:.4474,domain:'数与代数',topic:'数与运算',literacy:'运算能力'},
+  {t:'T24.1',s:2,avg:1.85,rate:92.73,diff:.9273,disc:.1825,domain:'图形与几何',topic:'图形的位置与运动',literacy:'空间观念'},
+  {t:'T24.2',s:1,avg:.84,rate:83.69,diff:.8369,disc:.3895,domain:'图形与几何',topic:'图形的位置与运动',literacy:'空间观念'},
+  {t:'T24.3',s:1,avg:.83,rate:82.92,diff:.8292,disc:.4546,domain:'图形与几何',topic:'图形的位置与运动',literacy:'空间观念'},
+  {t:'T24.4',s:2,avg:1.72,rate:85.91,diff:.8591,disc:.3129,domain:'图形与几何',topic:'图形的认识与测量',literacy:'空间观念'},
+  {t:'T25',s:4,avg:3.20,rate:79.91,diff:.7991,disc:.5726,domain:'图形与几何',topic:'图形的认识与测量',literacy:'空间观念'},
+  {t:'T26.1',s:1,avg:.88,rate:88.09,diff:.8809,disc:.2949,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T26.2',s:4,avg:2.74,rate:68.50,diff:.6850,disc:.7483,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T27',s:4,avg:2.38,rate:59.42,diff:.5942,disc:.7938,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T28.1',s:2,avg:1.46,rate:73.22,diff:.7322,disc:.6121,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T28.2',s:2,avg:1.17,rate:58.72,diff:.5872,disc:.7305,domain:'数与代数',topic:'数量关系',literacy:'应用意识'},
+  {t:'T29',s:5,avg:3.84,rate:76.76,diff:.7676,disc:.6316,domain:'图形与几何',topic:'图形的认识与测量',literacy:'应用意识'},
+  {t:'T30.1',s:1,avg:.81,rate:80.77,diff:.8077,disc:.5722,domain:'统计与概率',topic:'数据收集与整理',literacy:'数据意识'},
+  {t:'T30.2',s:2,avg:1.56,rate:78.16,diff:.7816,disc:.5502,domain:'统计与概率',topic:'数据收集与整理',literacy:'数据意识'},
+  {t:'T30.3',s:1,avg:.79,rate:79.12,diff:.7912,disc:.5603,domain:'统计与概率',topic:'数据收集与整理',literacy:'数据意识'},
+  {t:'T30.4',s:2,avg:1.52,rate:75.92,diff:.7592,disc:.5759,domain:'统计与概率',topic:'数据收集与整理',literacy:'数据意识'},
+];
+</script>
+</body>
+</html>
