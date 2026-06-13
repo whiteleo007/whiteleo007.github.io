@@ -205,7 +205,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
     <div class="hdr-logo">📋</div>
     <div>
       <div class="hdr-title">一日九事·养成教育数字化仪表盘</div>
-      <div class="hdr-sub">安阳教育学区·小学 · 全德育数字化管理平台</div>
+      <div class="hdr-sub">安阳教育学区· 全德育数字化管理平台</div>
     </div>
   </div>
   <div class="hdr-actions">
@@ -784,7 +784,7 @@ function renderOverview() {
   chartInstances['dimRadar'] = new Chart(document.getElementById('dimRadar'), {
     type:'radar',
     data:{ labels: DIMS.map(d=>d.name), datasets:[{ label:'全校平均得分率(%)', data:dimRates, fill:true, backgroundColor:'rgba(200,75,49,0.12)', borderColor:'#c84b31', pointBackgroundColor:'#c84b31', pointRadius:4, borderWidth:2 }]},
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100, ticks:{stepSize:20,font:{size:10}}, pointLabels:{font:{size:11,family:'Noto Sans SC'}} }}, plugins:{legend:{display:false}, datalabels: dl('#c84b31','end','end')} }
+    options:{ responsive:true, maintainAspectRatio:false, layout:{ padding: 16 }, scales:{ r:{ beginAtZero:true, max:100, ticks:{stepSize:20,font:{size:10}}, pointLabels:{font:{size:11,family:'Noto Sans SC'}} }}, plugins:{legend:{display:false}, datalabels: dl('radar')} }
   });
 
   // 柱状图：九维度得分率
@@ -792,7 +792,7 @@ function renderOverview() {
   chartInstances['dimBar'] = new Chart(document.getElementById('dimBar'), {
     type:'bar',
     data:{ labels: DIMS.map(d=>d.name), datasets:[{ label:'平均得分率(%)', data:dimRates, backgroundColor: DIM_COLORS.map(c=>c+'cc'), borderColor: DIM_COLORS, borderWidth:1.5, borderRadius:6 }]},
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100, ticks:{font:{size:10}} }, x:{ ticks:{font:{size:10}} } }, plugins:{ legend:{display:false}, datalabels: dl('#3a3a4e','end','top') } }
+    options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ top: 6 } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{font:{size:10}} }, x:{ ticks:{font:{size:10}} } }, plugins:{ legend:{display:false}, datalabels: dl('bar-in') } }
   });
 
   // 折线图：各星期的全校均分
@@ -807,7 +807,7 @@ function renderOverview() {
   chartInstances['weekdayLine'] = new Chart(document.getElementById('weekdayLine'), {
     type:'line',
     data:{ labels: WEEKDAYS, datasets:[{ label:'全校日均分', data:dayData, borderColor:'#c84b31', backgroundColor:'rgba(200,75,49,0.08)', fill:true, tension:0.4, pointRadius:5, pointBackgroundColor:'#c84b31', borderWidth:2 }]},
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:false }, x:{ ticks:{font:{size:11}} } }, plugins:{ legend:{display:false}, datalabels: dl('#c84b31','end','top') } }
+    options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ top:26, right:20, left:6 } }, scales:{ y:{ beginAtZero:false }, x:{ ticks:{font:{size:11}} } }, plugins:{ legend:{display:false}, datalabels: dl('line') } }
   });
 }
 
@@ -948,7 +948,7 @@ function renderTrend() {
   destroyChart('trendChart');
   chartInstances['trendChart'] = new Chart(canvas, {
     type:'line', data:{ labels, datasets },
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:false }, x:{ ticks:{font:{size:11}} }}, plugins:{ legend:{ position:'top', labels:{ font:{size:11,family:'Noto Sans SC'} } }, datalabels: dl('#3a3a4e','end','top') }, spanGaps:true }
+    options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ top:24, right:22, left:6 } }, scales:{ y:{ beginAtZero:false }, x:{ ticks:{font:{size:11}} }}, plugins:{ legend:{ position:'top', labels:{ font:{size:11,family:'Noto Sans SC'} } }, datalabels: dl('line') }, spanGaps:true }
   });
 }
 
@@ -994,7 +994,7 @@ function renderRank() {
       labels: shown.map(s=>s.cls),
       datasets:[{ label:'得分', data:shown.map(s=>s.score), backgroundColor: shown.map((_,i)=>DIM_COLORS[i%DIM_COLORS.length]+'bb'), borderColor: shown.map((_,i)=>DIM_COLORS[i%DIM_COLORS.length]), borderWidth:1.5, borderRadius:5 }]
     },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', scales:{ x:{ beginAtZero:true }, y:{ ticks:{font:{size:10,family:'Noto Sans SC'}} }}, plugins:{legend:{display:false}, datalabels: dl('#3a3a4e','end','right')} }
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', layout:{ padding:{ right: 30 } }, scales:{ x:{ beginAtZero:true, grace:'5%' }, y:{ ticks:{font:{size:10,family:'Noto Sans SC'}} }}, plugins:{legend:{display:false}, datalabels: dl('hbar-in')} }
   });
 }
 
@@ -1080,7 +1080,7 @@ function buildAiPrompt() {
     });
   }
 
-  return `你是一位经验丰富的小学德育管理专家，正在分析学校《一日九事校园行为常规量化》数据。
+  return `你是一位经验丰富的德育管理专家，正在分析学校《一日九事校园行为常规量化》数据。
 
 以下是真实数据摘要：
 ${contextData}
@@ -1233,17 +1233,60 @@ function updateTrendCount() {
 // ══════════════════════════════
 // 图表数据标签开关
 // ══════════════════════════════
-function dl(color, anchor, align) {
-  // datalabels插件配置，统一受showDataLabels控制
-  return {
-    display: showDataLabels,
-    color: color || '#3a3a4e',
+function isSmallBar(ctx) {
+  // 判断柱子是否太短装不下标签（小于数据集最大值的22%）
+  const data = (ctx.dataset.data || []).filter(v => v !== null && v !== undefined);
+  if (!data.length) return false;
+  const maxV = Math.max(...data, 1);
+  const v = ctx.dataset.data[ctx.dataIndex] || 0;
+  return v < maxV * 0.22;
+}
+
+function dl(mode) {
+  // datalabels按图表类型定制：柱内显示防裁切，线图带白底防遮挡
+  if (!showDataLabels) return { display: false };
+  const base = {
+    display: true,
+    clip: false,  // 关键：不被图表绘图区裁切
+    clamp: true,  // 锚点始终保持在图表区域内
     font: { size: 10, weight: '600', family: 'Noto Sans SC' },
-    anchor: anchor || 'end',
-    align: align || 'top',
-    clamp: true,
     formatter: v => (v === null || v === undefined) ? '' : v
   };
+  // 短柱外置标签的白底衬，避免压在网格线上看不清
+  const padBg = { backgroundColor: 'rgba(255,255,255,.92)', borderRadius: 4,
+                  padding: { top: 1, bottom: 1, left: 3, right: 3 } };
+  if (mode === 'bar-in') {
+    // 竖向柱：长柱→内部顶端白字；短柱→柱顶上方深色字+白底
+    return { ...base,
+      anchor: 'end',
+      align:  ctx => isSmallBar(ctx) ? 'end' : 'start',
+      color:  ctx => isSmallBar(ctx) ? '#3a3a4e' : '#fff',
+      backgroundColor: ctx => isSmallBar(ctx) ? 'rgba(255,255,255,.92)' : null,
+      borderRadius: 4,
+      padding: ctx => isSmallBar(ctx) ? { top: 1, bottom: 1, left: 3, right: 3 } : 0,
+      offset: 4 };
+  }
+  if (mode === 'hbar-in') {
+    // 横向柱：长柱→内部右端白字；短柱→柱右侧深色字+白底
+    return { ...base,
+      anchor: 'end',
+      align:  ctx => isSmallBar(ctx) ? 'right' : 'start',
+      color:  ctx => isSmallBar(ctx) ? '#3a3a4e' : '#fff',
+      backgroundColor: ctx => isSmallBar(ctx) ? 'rgba(255,255,255,.92)' : null,
+      borderRadius: 4,
+      padding: ctx => isSmallBar(ctx) ? { top: 1, bottom: 1, left: 3, right: 3 } : 0,
+      offset: 5,
+      font: { size: 9.5, weight: '600', family: 'Noto Sans SC' } };
+  }
+  if (mode === 'line') {
+    // 折线：点上方，白色半透明底衬防止与网格线/其他线重叠
+    return { ...base, color: '#3a3a4e', anchor: 'end', align: 'top', offset: 5, ...padBg };
+  }
+  if (mode === 'radar') {
+    // 雷达：点外侧，白底衬
+    return { ...base, color: '#c84b31', anchor: 'end', align: 'end', offset: 4, ...padBg };
+  }
+  return base;
 }
 
 function toggleDataLabels() {
