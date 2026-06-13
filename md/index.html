@@ -1,1 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文献转 Obsidian MD</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117;
+  --s1: #161b22;
+  --s2: #1c2128;
+  --s3: #21262d;
+  --border: #30363d;
+  --a1: #7c6ef7;
+  --a2: #4fc3a1;
+  --a3: #f0883e;
+  --text: #e6edf3;
+  --t2: #8b949e;
+  --t3: #6e7681;
+  --danger: #f85149;
+  --r: 10px;
+  --mono: 'JetBrains Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter','PingFang SC','Microsoft YaHei',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ─── Header ─── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--a1),var(--a2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hdr-title{font-size:15px;font-weight:600}
+.hdr-sub{font-size:12px;color:var(--t2);margin-left:6px}
+.hdr-badge{background:rgba(124,110,247,.15);border:1px solid rgba(124,110,247,.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--a1)}
+
+/* ─── Layout ─── */
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:320px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:var(--s1)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ─── Sidebar sections ─── */
+.sec{padding:16px 18px;border-bottom:1px solid var(--border)}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+label{font-size:12px;color:var(--t2)}
+input[type=text],input[type=password],select,textarea{background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 11px;outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--a1)}
+
+/* provider chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--t2);transition:all .15s}
+.chip:hover{border-color:var(--a1);color:var(--text)}
+.chip.on{background:var(--a1);border-color:var(--a1);color:#fff;font-weight:600}
+
+/* key row */
+.key-row{display:flex;gap:6px}
+.key-row input{flex:1;font-family:var(--mono);font-size:12px}
+.btn-icon{background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--t2);cursor:pointer;padding:8px 10px;font-size:13px;transition:color .2s;flex-shrink:0}
+.btn-icon:hover{color:var(--text)}
+.key-hint{font-size:11px;color:var(--t3);margin-top:3px}
+
+/* custom api */
+#custom-wrap{display:none;flex-direction:column;gap:6px;margin-top:8px}
+
+/* template cards */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tpl{border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s}
+.tpl:hover{border-color:var(--a1)}
+.tpl.on{border-color:var(--a1);background:rgba(124,110,247,.08)}
+.tpl-icon{font-size:18px;margin-bottom:4px}
+.tpl-name{font-size:12px;font-weight:600;color:var(--text)}
+.tpl-desc{font-size:11px;color:var(--t2);line-height:1.4;margin-top:2px}
+.tpl-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-top:4px;background:rgba(240,136,62,.15);color:var(--a3);border:1px solid rgba(240,136,62,.3)}
+
+/* upload */
+.drop{border:2px dashed var(--border);border-radius:9px;padding:22px 14px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop:hover,.drop.over{border-color:var(--a1);background:rgba(124,110,247,.04)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:26px;margin-bottom:6px}
+.drop-text{font-size:12px;color:var(--t2);line-height:1.6}
+.drop-text strong{color:var(--a1)}
+.drop-formats{font-size:11px;color:var(--t3);margin-top:4px}
+
+.file-pill{display:none;align-items:center;gap:8px;background:rgba(79,195,161,.08);border:1px solid rgba(79,195,161,.25);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-top:8px}
+.file-pill.show{display:flex}
+.file-pill .remove{margin-left:auto;cursor:pointer;color:var(--t2);font-size:14px}
+.file-pill .remove:hover{color:var(--danger)}
+
+/* progress */
+.prog-wrap{display:none;margin-top:10px}
+.prog-wrap.show{display:block}
+.prog-bar-bg{background:var(--s3);border-radius:4px;height:4px;overflow:hidden}
+.prog-bar{height:4px;background:linear-gradient(90deg,var(--a1),var(--a2));border-radius:4px;width:0;transition:width .3s}
+.prog-text{font-size:11px;color:var(--t2);margin-top:5px;text-align:center}
+
+/* extra prompt */
+textarea#extra{font-size:12px;line-height:1.6;min-height:64px;resize:vertical}
+
+/* convert btn */
+.btn-convert{margin:0 18px 18px;background:linear-gradient(135deg,var(--a1),#9b6ef7);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:600;padding:13px;cursor:pointer;transition:opacity .2s,transform .1s;letter-spacing:.3px}
+.btn-convert:hover{opacity:.9}
+.btn-convert:active{transform:scale(.98)}
+.btn-convert:disabled{opacity:.35;cursor:not-allowed}
+
+/* ─── Main output ─── */
+.out-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.out-hdr-left{display:flex;align-items:center;gap:8px}
+.out-hdr h2{font-size:13px;font-weight:600;color:var(--t2)}
+.out-actions{display:flex;gap:7px}
+.btn-sm{background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--t2);font-size:12px;padding:6px 13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn-sm:hover{border-color:var(--a1);color:var(--text)}
+.btn-sm.pri{background:var(--a1);border-color:var(--a1);color:#fff}
+.btn-sm.pri:hover{opacity:.85}
+
+.out-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.otab{padding:9px 14px;font-size:13px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+.otab.on{color:var(--a1);border-bottom-color:var(--a1)}
+
+.out-body{flex:1;position:relative;overflow:hidden}
+.out-body textarea{width:100%;height:100%;background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.75;resize:none;outline:none;padding:20px;display:block}
+.preview{display:none;padding:20px 28px;overflow-y:auto;height:100%;font-size:14px;line-height:1.85;color:var(--text)}
+.preview h1{font-size:20px;margin-bottom:12px;color:var(--a1);border-bottom:1px solid var(--border);padding-bottom:8px}
+.preview h2{font-size:16px;margin:20px 0 8px;color:var(--a2)}
+.preview h3{font-size:14px;margin:14px 0 5px;color:var(--a3)}
+.preview p{margin-bottom:10px}
+.preview ul,.preview ol{padding-left:20px;margin-bottom:10px}
+.preview li{margin-bottom:4px}
+.preview table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px}
+.preview th{background:var(--s2);padding:7px 12px;text-align:left;border:1px solid var(--border)}
+.preview td{padding:7px 12px;border:1px solid var(--border)}
+.preview code{font-family:var(--mono);background:var(--s2);padding:2px 6px;border-radius:4px;font-size:12px}
+.preview blockquote{border-left:3px solid var(--a1);padding-left:14px;color:var(--t2);margin:10px 0;font-style:italic}
+.preview hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+.preview .fm-table{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;font-family:var(--mono)}
+
+/* loading overlay */
+.loading{display:none;position:absolute;inset:0;background:rgba(13,17,23,.85);align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(6px);z-index:10}
+.loading.show{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--a1);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-size:13px;color:var(--t2)}
+.loading-sub{font-size:11px;color:var(--t3)}
+
+/* empty */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:10px;padding:40px}
+.empty-icon{font-size:52px;opacity:.25}
+.empty p{font-size:13px;text-align:center;line-height:1.6}
+
+/* status */
+.status{padding:8px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--t2);display:flex;align-items:center;gap:7px;background:var(--s1);flex-shrink:0;min-height:32px}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.sdot.ok{background:var(--a2)}
+.sdot.err{background:var(--danger)}
+.sdot.run{background:var(--a1);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* chunk warning */
+.chunk-warn{background:rgba(240,136,62,.1);border:1px solid rgba(240,136,62,.3);border-radius:7px;padding:10px 13px;font-size:12px;color:var(--a3);display:none;align-items:flex-start;gap:8px;margin-top:8px;line-height:1.5}
+.chunk-warn.show{display:flex}
+
+/* toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 16px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--a2)}
+.toast.err{border-color:var(--danger)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">📚</div>
+    <div>
+      <span class="hdr-title">文献 → Obsidian MD</span>
+      <span class="hdr-sub">教科研知识库专用转换器</span>
+    </div>
+  </div>
+  <div class="hdr-badge">支持 PDF · Word · TXT</div>
+</div>
+
+<div class="body">
+<!-- ─── Sidebar ─── -->
+<div class="sidebar">
+
+  <!-- Provider -->
+  <div class="sec">
+    <div class="sec-title">AI 提供商</div>
+    <div class="chips">
+      <button class="chip on" onclick="switchProvider('deepseek',this)">DeepSeek</button>
+      <button class="chip" onclick="switchProvider('qwen',this)">千问</button>
+      <button class="chip" onclick="switchProvider('openai',this)">OpenAI</button>
+      <button class="chip" onclick="switchProvider('custom',this)">自定义</button>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>API Key</label>
+      <div class="key-row">
+        <input type="password" id="api-key" placeholder="sk-..." oninput="saveKey()"/>
+        <button class="btn-icon" onclick="toggleKey()">👁</button>
+      </div>
+      <div class="key-hint" id="key-hint"></div>
+    </div>
+    <div id="custom-wrap">
+      <div class="field">
+        <label>API 地址</label>
+        <input type="text" id="custom-ep" placeholder="https://api.xxx.com/v1"/>
+      </div>
+      <div class="field">
+        <label>模型名称</label>
+        <input type="text" id="custom-model" placeholder="model-name"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template -->
+  <div class="sec">
+    <div class="sec-title">输出模板</div>
+    <div class="tpl-grid">
+      <div class="tpl on" onclick="selectTpl('paper',this)" id="t-paper">
+        <div class="tpl-icon">📄</div>
+        <div class="tpl-name">学术论文</div>
+        <div class="tpl-desc">摘要·论点·方法·启示</div>
+        <span class="tpl-badge">PDF 推荐</span>
+      </div>
+      <div class="tpl" onclick="selectTpl('school',this)" id="t-school">
+        <div class="tpl-icon">🏫</div>
+        <div class="tpl-name">学校档案</div>
+        <div class="tpl-desc">工作总结→档案格式</div>
+      </div>
+      <div class="tpl" onclick="selectTpl('meeting',this)" id="t-meeting">
+        <div class="tpl-icon">📋</div>
+        <div class="tpl-name">会议记录</div>
+        <div class="tpl-desc">纪要→结构化格式</div>
+      </div>
+      <div class="tpl" onclick="selectTpl('free',this)" id="t-free">
+        <div class="tpl-icon">✨</div>
+        <div class="tpl-name">自由转换</div>
+        <div class="tpl-desc">AI 智能识别结构</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="sec">
+    <div class="sec-title">上传文档</div>
+    <div class="drop" id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf,.docx,.txt" onchange="handleFile(event)"/>
+      <div class="drop-icon">📂</div>
+      <div class="drop-text">拖拽或<strong>点击上传</strong></div>
+      <div class="drop-formats">支持 PDF · DOCX · TXT</div>
+    </div>
+    <div class="file-pill" id="file-pill">
+      <span id="file-type-icon">📄</span>
+      <span id="file-name-text">—</span>
+      <span class="remove" onclick="removeFile()">✕</span>
+    </div>
+    <div class="chunk-warn" id="chunk-warn">
+      <span>⚠️</span>
+      <span id="chunk-warn-text">文档较长，将分段处理后合并，耗时稍长。</span>
+    </div>
+    <div class="prog-wrap" id="prog-wrap">
+      <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar"></div></div>
+      <div class="prog-text" id="prog-text">准备中…</div>
+    </div>
+  </div>
+
+  <!-- Extra -->
+  <div class="sec">
+    <div class="sec-title">补充指令（可选）</div>
+    <textarea id="extra" placeholder="例如：重点提取对小学数学教学的启示，忽略统计方法细节…"></textarea>
+  </div>
+
+  <button class="btn-convert" id="conv-btn" disabled onclick="convert()">✨ 开始转换</button>
+</div>
+
+<!-- ─── Main ─── -->
+<div class="main">
+  <div class="out-hdr">
+    <div class="out-hdr-left">
+      <h2>转换结果</h2>
+    </div>
+    <div class="out-actions">
+      <button class="btn-sm" onclick="copyMD()">📋 复制</button>
+      <button class="btn-sm pri" onclick="downloadMD()">⬇ 下载 .md</button>
+    </div>
+  </div>
+
+  <div class="out-tabs">
+    <div class="otab on" onclick="switchTab('raw',this)">Markdown 源码</div>
+    <div class="otab" onclick="switchTab('preview',this)">预览</div>
+  </div>
+
+  <div class="out-body" id="out-body">
+    <div class="loading" id="loading">
+      <div class="spin"></div>
+      <div class="loading-msg" id="loading-msg">正在调用 AI 转换…</div>
+      <div class="loading-sub" id="loading-sub"></div>
+    </div>
+    <div class="empty" id="empty">
+      <div class="empty-icon">🗂</div>
+      <p>上传文档并点击转换<br>支持学术论文 PDF、工作总结 Word 等</p>
+    </div>
+    <textarea id="md-out" style="display:none" spellcheck="false" oninput="syncPreview()"></textarea>
+    <div class="preview" id="preview"></div>
+  </div>
+
+  <div class="status">
+    <div class="sdot" id="sdot"></div>
+    <span id="stext">就绪，等待上传文档</span>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ──────────────────────────────
+let provider = 'deepseek';
+let template = 'paper';
+let rawText = '';
+let fileName = '';
+let fileType = '';
+
+const PROVIDERS = {
+  deepseek: { ep: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat' },
+  qwen:     { ep: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus' },
+  openai:   { ep: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
+  custom:   { ep: '', model: '' }
+};
+
+// 每种模板的系统提示
+const TEMPLATES = {
+  paper: `你是一位教科研助手，请将以下学术论文内容整理为 Obsidian Markdown 笔记，严格按此模板输出，不要添加任何额外说明：
+
+---
+标题: [论文标题]
+作者: [作者姓名]
+期刊: [期刊名称和年份]
+关键词: [关键词]
+录入日期: [今天 YYYY-MM-DD]
+类型: 学术文献
+学科: [如：教育学/数学教育/课程论]
+标签: 文献
+---
+
+# [论文标题]
+
+## 核心摘要
+
+> [用2-3句话概括论文核心主张，要求极度精炼]
+
+---
+
+## 研究背景与问题
+
+[提取研究背景和研究问题，3-5条要点]
+
+---
+
+## 核心论点
+
+[提取2-4个最重要的核心论点，每个论点加粗标题后跟简要说明]
+
+---
+
+## 研究方法
+
+| 方法要素 | 内容 |
+|---------|------|
+| 研究类型 | [定量/定性/混合] |
+| 研究对象 | [样本描述] |
+| 数据来源 | [数据收集方式] |
+| 分析方法 | [分析工具或框架] |
+
+---
+
+## 主要发现
+
+[提取3-5条最重要的研究发现，用要点列表]
+
+---
+
+## 对教学实践的启示
+
+> 结合教科研工作视角提炼实践意义
+
+[提取或推断论文对一线教学、教研管理的实践启示，3-5条]
+
+---
+
+## 值得引用的观点
+
+[提取1-3个有价值的原文论述，用引用格式]
+
+---
+
+## 关联思考
+
+[基于论文内容，列出2-3个值得进一步探究的问题或与本地教育实践的结合点]
+
+---
+
+## 参考信息
+
+[提取参考文献数量、主要引用来源等信息]`,
+
+  school: `请将以下学校工作总结转换为 Obsidian Markdown 格式，严格按照以下模板输出：
+
+---
+单位名称: [学校名称]
+校长: [校长姓名]
+学期: [学期]
+更新日期: [今天 YYYY-MM-DD]
+类别: 下属单位
+标签: 
+---
+
+# [学校名称]
+
+## 基本信息
+
+| 项目 | 内容 |
+|------|------|
+| 单位名称 | [学校名称] |
+| 校（园）长 |  |
+
+---
+
+## 本学期工作梳理
+
+[条例式要点，每条"- "开头]
+
+---
+
+## 本学期重大成绩
+
+[重要成绩和荣誉]
+
+---
+
+## 本学期承办活动
+
+[学区级及以上活动]
+
+---
+
+## 目前存在问题
+
+[问题和不足]
+
+---
+
+## 备注
+
+---
+
+## 历史记录
+
+| 学期 | 关键事项 | 备注 |
+|------|----------|------|
+|  |  |  |`,
+
+  meeting: `请将以下会议文档转换为 Obsidian Markdown 格式：
+
+---
+日期: [YYYY-MM-DD]
+类型: 会议记录
+学校名称: [相关学校]
+主持人: [主持人]
+参会人: [参会人员]
+标签: 
+---
+
+# [会议主题]
+
+## 会议主题
+
+## 主要内容
+
+## 决议事项
+
+## 待跟进
+
+- [ ] 
+
+## 备注`,
+
+  free: `请将以下文档转换为结构清晰的 Obsidian Markdown 格式。要求：
+1. 开头加 YAML frontmatter（---包裹），含标题、日期、类型、标签字段
+2. 用 ## 作主要章节，### 作子标题
+3. 列表用 - 开头，待办用 - [ ]
+4. 重要数据用表格
+5. 直接输出 Markdown，不要额外说明`
+};
+
+// ── Provider ───────────────────────────
+function switchProvider(p, el) {
+  provider = p;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  const cw = document.getElementById('custom-wrap');
+  cw.style.display = p === 'custom' ? 'flex' : 'none';
+  const saved = localStorage.getItem('key_' + p) || '';
+  document.getElementById('api-key').value = saved;
+  updateKeyHint();
+}
+
+function toggleKey() {
+  const i = document.getElementById('api-key');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+function saveKey() {
+  const v = document.getElementById('api-key').value;
+  localStorage.setItem('key_' + provider, v);
+  updateKeyHint();
+}
+
+function updateKeyHint() {
+  const v = document.getElementById('api-key').value;
+  document.getElementById('key-hint').textContent = v ? `已输入 ${v.length} 字符` : '';
+}
+
+// ── Template ───────────────────────────
+function selectTpl(t, el) {
+  template = t;
+  document.querySelectorAll('.tpl').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ── File Upload ────────────────────────
+function handleFile(e) { loadFile(e.target.files[0]); }
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); loadFile(e.dataTransfer.files[0]); });
+
+async function loadFile(file) {
+  if (!file) return;
+  fileName = file.name.replace(/\.[^/.]+$/, '');
+  fileType = file.name.split('.').pop().toLowerCase();
+
+  // pill
+  const icons = { pdf: '📕', docx: '📘', doc: '📘', txt: '📄' };
+  document.getElementById('file-type-icon').textContent = icons[fileType] || '📄';
+  document.getElementById('file-name-text').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  document.getElementById('file-pill').classList.add('show');
+
+  setStatus('run', '正在解析文档…');
+  showProg(true, 0, '读取文件…');
+
+  try {
+    if (fileType === 'pdf') {
+      rawText = await extractPDF(file);
+    } else if (fileType === 'docx' || fileType === 'doc') {
+      rawText = await extractDOCX(file);
+    } else if (fileType === 'txt') {
+      rawText = await file.text();
+    } else {
+      throw new Error('不支持的格式，请上传 PDF / DOCX / TXT');
+    }
+
+    showProg(false);
+    setStatus('ok', `解析完成，共 ${rawText.length} 字符`);
+    document.getElementById('conv-btn').disabled = false;
+
+    // 长文档提示
+    const cw = document.getElementById('chunk-warn');
+    if (rawText.length > 8000) {
+      document.getElementById('chunk-warn-text').textContent =
+        `文档较长（${rawText.length} 字），将分 ${Math.ceil(rawText.length/6000)} 段处理后合并，耗时稍长。`;
+      cw.classList.add('show');
+    } else {
+      cw.classList.remove('show');
+    }
+  } catch (err) {
+    showProg(false);
+    setStatus('err', err.message);
+    toast('❌ ' + err.message, 'err');
+  }
+}
+
+function removeFile() {
+  rawText = ''; fileName = ''; fileType = '';
+  document.getElementById('file-pill').classList.remove('show');
+  document.getElementById('chunk-warn').classList.remove('show');
+  document.getElementById('conv-btn').disabled = true;
+  document.getElementById('file-input').value = '';
+  setStatus('', '就绪');
+}
+
+// ── PDF Extract ────────────────────────
+async function extractPDF(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const total = pdf.numPages;
+  let text = '';
+
+  for (let i = 1; i <= total; i++) {
+    showProg(true, Math.round(i/total*100), `解析第 ${i}/${total} 页…`);
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    text += pageText + '\n';
+  }
+
+  if (!text.trim()) throw new Error('PDF 无可提取文字（可能是扫描件），请转为文字版 PDF 再上传');
+  return text;
+}
+
+// ── DOCX Extract ───────────────────────
+async function extractDOCX(file) {
+  const buf = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value;
+}
+
+// ── Convert ────────────────────────────
+async function convert() {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) { toast('⚠️ 请填写 API Key', 'err'); return; }
+  if (!rawText) { toast('⚠️ 请先上传文档', 'err'); return; }
+
+  const extra = document.getElementById('extra').value.trim();
+  const systemPrompt = TEMPLATES[template] + (extra ? '\n\n补充要求：' + extra : '');
+
+  let ep = PROVIDERS[provider].ep;
+  let model = PROVIDERS[provider].model;
+  if (provider === 'custom') {
+    ep = (document.getElementById('custom-ep').value.trim()).replace(/\/$/, '') + '/chat/completions';
+    model = document.getElementById('custom-model').value.trim();
+    if (!ep || !model) { toast('⚠️ 请填写自定义端点和模型名', 'err'); return; }
+  }
+
+  document.getElementById('conv-btn').disabled = true;
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('md-out').style.display = 'none';
+  document.getElementById('preview').style.display = 'none';
+
+  // 分段处理
+  const CHUNK = 6000;
+  const chunks = [];
+  for (let i = 0; i < rawText.length; i += CHUNK) chunks.push(rawText.slice(i, i + CHUNK));
+
+  let finalMD = '';
+
+  try {
+    if (chunks.length === 1) {
+      // 单段
+      showLoading(true, '正在转换…', `使用 ${provider.toUpperCase()} · ${model}`);
+      finalMD = await callAI(ep, key, model, systemPrompt, rawText);
+    } else {
+      // 多段：先分段提取，再合并
+      let extracted = [];
+      for (let i = 0; i < chunks.length; i++) {
+        showLoading(true, `正在处理第 ${i+1}/${chunks.length} 段…`, '长文档分段处理中');
+        const seg = await callAI(ep, key, model,
+          '请提取以下文本片段的关键信息，用要点列表输出，保留重要数字和结论，去除冗余描述：',
+          chunks[i]);
+        extracted.push(seg);
+      }
+      // 最终整合
+      showLoading(true, '正在整合所有段落…', '生成最终 Markdown');
+      const combined = extracted.join('\n\n---段落分隔---\n\n');
+      finalMD = await callAI(ep, key, model,
+        systemPrompt + '\n\n注意：以下内容是从长文档中分段提取的摘要，请综合所有段落整合为一份完整的笔记：',
+        combined);
+    }
+
+    showResult(finalMD);
+    setStatus('ok', `转换完成 · ${finalMD.length} 字符`);
+    toast('✅ 转换成功！', 'ok');
+  } catch (err) {
+    showLoading(false);
+    setStatus('err', '失败：' + err.message);
+    toast('❌ ' + err.message, 'err');
+  } finally {
+    document.getElementById('conv-btn').disabled = false;
+  }
+}
+
+// ── API Call ───────────────────────────
+async function callAI(ep, key, model, system, userContent) {
+  const resp = await fetch(ep, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4000,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: userContent }
+      ]
+    })
+  });
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}));
+    throw new Error(e.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('AI 返回内容为空');
+  return text;
+}
+
+// ── Display ────────────────────────────
+function showResult(md) {
+  showLoading(false);
+  const ta = document.getElementById('md-out');
+  ta.style.display = 'block';
+  ta.value = md;
+  syncPreview();
+}
+
+function syncPreview() {
+  const md = document.getElementById('md-out').value;
+  // 简单 md → html
+  let h = md
+    .replace(/^---\n([\s\S]*?)\n---/m, (_, fm) => {
+      const rows = fm.trim().split('\n').map(l => {
+        const idx = l.indexOf(':');
+        if (idx < 0) return '';
+        return `<tr><td><b>${l.slice(0,idx).trim()}</b></td><td>${l.slice(idx+1).trim()}</td></tr>`;
+      }).join('');
+      return `<div class="fm-table"><table>${rows}</table></div>`;
+    })
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^- \[ \] (.+)$/gm,'<li>☐ $1</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/\n\n/g,'</p><p>');
+  document.getElementById('preview').innerHTML = '<p>' + h + '</p>';
+}
+
+function switchTab(t, el) {
+  document.querySelectorAll('.otab').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  const ta = document.getElementById('md-out');
+  const pre = document.getElementById('preview');
+  if (t === 'raw') { ta.style.display = 'block'; pre.style.display = 'none'; }
+  else { ta.style.display = 'none'; pre.style.display = 'block'; }
+}
+
+function copyMD() {
+  const v = document.getElementById('md-out').value;
+  if (!v) { toast('⚠️ 没有内容', 'err'); return; }
+  navigator.clipboard.writeText(v).then(() => toast('📋 已复制到剪贴板', 'ok'));
+}
+
+function downloadMD() {
+  const v = document.getElementById('md-out').value;
+  if (!v) { toast('⚠️ 没有内容', 'err'); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([v], { type: 'text/markdown;charset=utf-8' }));
+  a.download = (fileName || 'note') + '.md';
+  a.click();
+  toast('⬇ 下载完成', 'ok');
+}
+
+// ── Utils ───────────────────────────────
+function showLoading(show, msg = '', sub = '') {
+  document.getElementById('loading').classList.toggle('show', show);
+  if (msg) document.getElementById('loading-msg').textContent = msg;
+  if (sub) document.getElementById('loading-sub').textContent = sub;
+}
+
+function showProg(show, pct = 0, text = '') {
+  const w = document.getElementById('prog-wrap');
+  w.classList.toggle('show', show);
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-text').textContent = text;
+}
+
+function setStatus(type, text) {
+  const d = document.getElementById('sdot');
+  d.className = 'sdot' + (type ? ' ' + type : '');
+  document.getElementById('stext').textContent = text;
+}
+
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Init ────────────────────────────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('key_deepseek') || '';
+  document.getElementById('api-key').value = saved;
+  if (saved) updateKeyHint();
+});
+</script>
+</body>
+</html>
 
