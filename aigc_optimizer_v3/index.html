@@ -1,1 +1,1777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术润色工作台 · Leo's Writing Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE6;
+    --surface3: #E8E4DB;
+    --border: rgba(60,52,40,0.12);
+    --border-md: rgba(60,52,40,0.2);
+    --text: #1C1814;
+    --text2: #5C5248;
+    --text3: #8C8278;
+    --accent: #2B4D8C;
+    --accent-light: #E8EEF8;
+    --accent2: #5C8A3C;
+    --accent2-light: #EAF2E4;
+    --danger: #A33030;
+    --danger-light: #F5EBEB;
+    --warn: #8C5C10;
+    --warn-light: #F5EEE0;
+    --gold: #B08A2A;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 2px 12px rgba(28,24,20,0.08);
+    --shadow-lg: 0 8px 32px rgba(28,24,20,0.12);
+    --font-body: 'DM Sans', sans-serif;
+    --font-serif: 'Noto Serif SC', serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --transition: 0.18s ease;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .brand-name {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+  .brand-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 1px;
+  }
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .model-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+  }
+  .model-selector-group label {
+    font-size: 12px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+  .model-selector-group select {
+    background: transparent;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+    padding-right: 4px;
+  }
+  .api-key-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .api-key-btn:hover { background: var(--surface3); border-color: var(--border-md); }
+  .api-key-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: var(--transition);
+  }
+  .api-key-dot.active { background: var(--accent2); }
+  .history-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .history-btn:hover { background: var(--surface2); }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 58px);
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    width: 340px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .panel-section {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-title svg { opacity: 0.6; }
+
+  /* Intent */
+  .intent-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    transition: border-color var(--transition);
+    line-height: 1.5;
+  }
+  .intent-input:focus { border-color: var(--accent); }
+
+  /* Strategy chips */
+  .strategy-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .strategy-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: all var(--transition);
+    background: var(--surface2);
+  }
+  .strategy-item:hover { border-color: var(--accent); background: var(--accent-light); }
+  .strategy-item.active { border-color: var(--accent); background: var(--accent-light); }
+  .strategy-item input[type="checkbox"] { display: none; }
+  .strategy-check {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border-md);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all var(--transition);
+    background: var(--surface);
+  }
+  .strategy-item.active .strategy-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .strategy-check-icon { display: none; }
+  .strategy-item.active .strategy-check-icon {
+    display: block;
+    color: white;
+    font-size: 10px;
+  }
+  .strategy-info { flex: 1; }
+  .strategy-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .strategy-desc { font-size: 11px; color: var(--text3); margin-top: 1px; line-height: 1.4; }
+
+  /* Intensity */
+  .intensity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .intensity-label { font-size: 12px; color: var(--text3); white-space: nowrap; }
+  .intensity-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) 50%, var(--surface3) 50%);
+    outline: none;
+    cursor: pointer;
+  }
+  .intensity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    box-shadow: 0 1px 4px rgba(43,77,140,0.3);
+    cursor: pointer;
+  }
+  .intensity-val {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* Reference files */
+  .ref-upload-area {
+    border: 1.5px dashed var(--border-md);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--surface2);
+  }
+  .ref-upload-area:hover { border-color: var(--accent); background: var(--accent-light); }
+  .ref-upload-area p { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .ref-upload-area span { color: var(--accent); font-weight: 500; }
+  .ref-file-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .ref-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: var(--accent-light);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .ref-file-item button {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+  .ref-file-item button:hover { color: var(--danger); }
+
+  /* Start button */
+  .start-btn {
+    margin: 14px 18px;
+    width: calc(100% - 36px);
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+  .start-btn:hover { background: #1e3d7a; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,77,140,0.3); }
+  .start-btn:active { transform: translateY(0); }
+  .start-btn:disabled { background: var(--surface3); color: var(--text3); cursor: not-allowed; transform: none; box-shadow: none; }
+  .start-btn .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .start-btn.loading .spinner { display: block; }
+  .start-btn.loading .btn-text { opacity: 0.7; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CENTER AREA ── */
+  .center-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-toolbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    background: transparent;
+    color: var(--text2);
+  }
+  .tab-btn.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: rgba(43,77,140,0.15);
+  }
+  .tab-btn:hover:not(.active) { background: var(--surface2); }
+  .toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .upload-inline-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--surface2);
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .upload-inline-btn:hover { background: var(--surface3); }
+  .char-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+  }
+
+  /* Compare pane */
+  .compare-pane {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    overflow: hidden;
+  }
+  .text-pane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .text-pane:last-child { border-right: none; }
+  .pane-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .pane-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .pane-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .pane-badge.original { background: var(--surface3); color: var(--text3); }
+  .pane-badge.optimized { background: var(--accent-light); color: var(--accent); }
+  .pane-actions { margin-left: auto; display: flex; gap: 6px; }
+  .pane-action-btn {
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--surface);
+    color: var(--text2);
+  }
+  .pane-action-btn:hover { background: var(--surface3); }
+  .pane-action-btn.copied { background: var(--accent2-light); color: var(--accent2); border-color: rgba(92,138,60,0.2); }
+  .text-area-pane {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+  #input-textarea {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--text);
+  }
+  #input-textarea::placeholder { color: var(--text3); }
+  #output-content { white-space: pre-wrap; }
+  .output-placeholder {
+    color: var(--text3);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    text-align: center;
+  }
+  .output-placeholder svg { opacity: 0.3; }
+  .streaming-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    margin-left: 1px;
+    animation: blink 0.8s infinite;
+    vertical-align: text-bottom;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── RIGHT PANEL (AIGC Detection) ── */
+  .right-panel {
+    width: 290px;
+    min-width: 240px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .right-panel-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .right-panel-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .detect-btn {
+    margin: 12px 16px 0;
+    width: calc(100% - 32px);
+    padding: 9px;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .detect-btn:hover { background: var(--accent-light); }
+  .detect-btn:disabled { border-color: var(--border-md); color: var(--text3); cursor: not-allowed; }
+  .detect-btn .spinner { width: 14px; height: 14px; border: 2px solid rgba(43,77,140,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .detect-btn.loading .spinner { display: block; }
+  .score-ring-container {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .score-ring-wrapper {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    margin-bottom: 8px;
+  }
+  .score-ring-wrapper canvas { position: absolute; top: 0; left: 0; }
+  .score-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .score-number {
+    font-size: 26px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    color: var(--text);
+    line-height: 1;
+  }
+  .score-unit { font-size: 11px; color: var(--text3); }
+  .score-label {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 6px;
+    padding: 3px 12px;
+    border-radius: 20px;
+  }
+  .score-safe { background: var(--accent2-light); color: var(--accent2); }
+  .score-warn { background: var(--warn-light); color: var(--warn); }
+  .score-danger { background: var(--danger-light); color: var(--danger); }
+  .dimensions-list {
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dim-item {}
+  .dim-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .dim-name { font-size: 12px; color: var(--text2); }
+  .dim-score { font-size: 12px; font-weight: 500; font-family: var(--font-mono); }
+  .dim-bar-bg {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--surface3);
+    overflow: hidden;
+  }
+  .dim-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .detect-notes {
+    margin: 0 16px 12px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+    border-left: 3px solid var(--accent);
+  }
+  .detect-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── HISTORY SIDEBAR ── */
+  .history-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+  }
+  .history-overlay.open { display: block; }
+  .history-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(28,24,20,0.3);
+  }
+  .history-drawer {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 420px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  .history-overlay.open .history-drawer { transform: translateX(0); }
+  .history-drawer-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .history-drawer-title { font-size: 15px; font-weight: 500; }
+  .close-btn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text2);
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+  .close-btn:hover { background: var(--surface2); }
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .history-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--surface2);
+  }
+  .history-item:hover { border-color: var(--accent); background: var(--accent-light); }
+  .history-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .history-item-time { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+  .history-item-model {
+    font-size: 11px;
+    padding: 1px 7px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 10px;
+  }
+  .history-item-preview { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .history-item-preview-label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .history-item-strategies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .history-strategy-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    background: var(--surface3);
+    color: var(--text3);
+    border-radius: 10px;
+  }
+  .history-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .history-clear-btn {
+    margin: 0 12px 12px;
+    width: calc(100% - 24px);
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text3);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .history-clear-btn:hover { background: var(--danger-light); color: var(--danger); border-color: rgba(163,48,48,0.2); }
+
+  /* ── API KEY MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(28,24,20,0.4);
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 460px;
+    max-width: 95vw;
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 500; }
+  .modal-body { padding: 18px 20px; }
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .modal-field { margin-bottom: 14px; }
+  .modal-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
+  .modal-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-hint { font-size: 11px; color: var(--text3); margin-top: 5px; line-height: 1.5; }
+  .btn-primary {
+    padding: 8px 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-primary:hover { background: #1e3d7a; }
+  .btn-secondary {
+    padding: 8px 18px;
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-md); }
+
+  /* ── TOAST ── */
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--text);
+    color: var(--surface);
+    max-width: 280px;
+  }
+  .toast.success { background: var(--accent2); }
+  .toast.error { background: var(--danger); }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Export row */
+  .export-row {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
+  .export-label { font-size: 12px; color: var(--text3); margin-right: 4px; }
+  .export-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--surface);
+    color: var(--text2);
+  }
+  .export-btn:hover { background: var(--surface3); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-icon">润</div>
+    <div>
+      <div class="brand-name">学术润色工作台</div>
+      <div class="brand-sub">Leo's Academic Writing Studio</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <div class="model-selector-group">
+      <label>模型</label>
+      <select id="model-select" onchange="onModelChange()">
+        <option value="ollama">qwen3.6:35B (本地·免费)</option>
+        <option value="deepseek">DeepSeek-V3</option>
+        <option value="wenxin">文心一言 4.0</option>
+        <option value="doubao">豆包 Pro</option>
+      </select>
+    </div>
+    <button class="api-key-btn" onclick="openApiModal()">
+      <div class="api-key-dot" id="api-dot"></div>
+      <span id="api-key-label">API 设置</span>
+    </button>
+    <button class="history-btn" onclick="toggleHistory()">历史记录</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="left-panel">
+
+    <!-- Writing Intent -->
+    <div class="panel-section">
+      <div class="section-title">写作意图</div>
+      <textarea class="intent-input" id="intent-input" rows="2" placeholder="说明用途，如：区级案例分析报告、课题申报书、教学论文…"></textarea>
+    </div>
+
+    <!-- Strategies -->
+    <div class="panel-section">
+      <div class="section-title">改写策略</div>
+      <div class="strategy-grid" id="strategy-grid">
+        <label class="strategy-item active" onclick="toggleStrategy(this)">
+          <input type="checkbox" checked>
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">句式多样化</div>
+            <div class="strategy-desc">打破均匀句长，长短句自然交替</div>
+          </div>
+        </label>
+        <label class="strategy-item active" onclick="toggleStrategy(this)">
+          <input type="checkbox" checked>
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">降低套话密度</div>
+            <div class="strategy-desc">替换"综上所述""不可忽视"等模式化表达</div>
+          </div>
+        </label>
+        <label class="strategy-item active" onclick="toggleStrategy(this)">
+          <input type="checkbox" checked>
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">注入第一人称</div>
+            <div class="strategy-desc">加入"笔者认为""在实际工作中"等个人化表达</div>
+          </div>
+        </label>
+        <label class="strategy-item" onclick="toggleStrategy(this)">
+          <input type="checkbox">
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">情境具体化</div>
+            <div class="strategy-desc">增加真实场景描述，减少抽象概括</div>
+          </div>
+        </label>
+        <label class="strategy-item active" onclick="toggleStrategy(this)">
+          <input type="checkbox" checked>
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">保留学术严谨性</div>
+            <div class="strategy-desc">改写中不损失专业术语与逻辑结构</div>
+          </div>
+        </label>
+        <label class="strategy-item" onclick="toggleStrategy(this)">
+          <input type="checkbox">
+          <div class="strategy-check"><span class="strategy-check-icon">✓</span></div>
+          <div class="strategy-info">
+            <div class="strategy-name">参考文献引用提示</div>
+            <div class="strategy-desc">在适当位置建议引用已上传参考文献</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Intensity -->
+    <div class="panel-section">
+      <div class="section-title">改写强度</div>
+      <div class="intensity-row">
+        <span class="intensity-label">轻度润色</span>
+        <input type="range" class="intensity-slider" id="intensity-slider" min="1" max="5" value="3" oninput="updateIntensity(this)">
+        <span class="intensity-val" id="intensity-val">深度重构</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5;" id="intensity-desc">
+        均衡改写：调整句式结构，替换套话，保留原有逻辑框架
+      </div>
+    </div>
+
+    <!-- Reference Files -->
+    <div class="panel-section">
+      <div class="section-title">参考文献</div>
+      <div class="ref-upload-area" onclick="document.getElementById('ref-file-input').click()">
+        <p>点击上传参考文献<br><span>PDF · DOCX · TXT</span></p>
+      </div>
+      <input type="file" id="ref-file-input" style="display:none" multiple accept=".pdf,.docx,.txt" onchange="handleRefUpload(event)">
+      <div class="ref-file-list" id="ref-file-list"></div>
+    </div>
+
+    <!-- Start Button -->
+    <button class="start-btn" id="start-btn" onclick="startOptimize()">
+      <div class="spinner"></div>
+      <span class="btn-text">开始优化</span>
+    </button>
+
+  </aside>
+
+  <!-- CENTER AREA -->
+  <main class="center-area">
+    <div class="editor-toolbar">
+      <button class="tab-btn active" id="tab-edit" onclick="switchTab('edit')">输入原文</button>
+      <button class="tab-btn" id="tab-compare" onclick="switchTab('compare')">对比视图</button>
+      <div class="toolbar-sep"></div>
+      <button class="upload-inline-btn" onclick="document.getElementById('main-file-input').click()">
+        ↑ 上传文档
+      </button>
+      <input type="file" id="main-file-input" style="display:none" accept=".pdf,.docx,.txt" onchange="handleMainUpload(event)">
+      <span class="char-count" id="char-count">0 字</span>
+    </div>
+
+    <div class="compare-pane">
+      <!-- Left: Input -->
+      <div class="text-pane">
+        <div class="pane-header">
+          <span class="pane-label">原文</span>
+          <span class="pane-badge original">待优化</span>
+          <div class="pane-actions">
+            <button class="pane-action-btn" onclick="clearInput()">清空</button>
+          </div>
+        </div>
+        <div class="text-area-pane">
+          <textarea id="input-textarea" placeholder="在此粘贴需要降低AIGC率的学术文本…&#10;&#10;或点击上方「上传文档」导入 PDF / DOCX / TXT 文件" oninput="updateCharCount()"></textarea>
+        </div>
+      </div>
+
+      <!-- Right: Output -->
+      <div class="text-pane">
+        <div class="pane-header">
+          <span class="pane-label">优化结果</span>
+          <span class="pane-badge optimized" id="output-badge">等待中</span>
+          <div class="pane-actions">
+            <button class="pane-action-btn" id="copy-btn" onclick="copyOutput()">复制</button>
+            <button class="pane-action-btn" onclick="rewriteParagraph()">重写段落</button>
+          </div>
+        </div>
+        <div class="text-area-pane" id="output-area">
+          <div class="output-placeholder" id="output-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <div>点击左侧「开始优化」<br>结果将实时显示在此处</div>
+          </div>
+          <div id="output-content" style="display:none;white-space:pre-wrap;"></div>
+        </div>
+        <div class="export-row">
+          <span class="export-label">导出：</span>
+          <button class="export-btn" onclick="exportTxt()">TXT</button>
+          <button class="export-btn" onclick="exportDocx()">DOCX</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL: AIGC Detection -->
+  <aside class="right-panel">
+    <div class="right-panel-header">
+      <div class="right-panel-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        AIGC 疑似度检测
+      </div>
+    </div>
+    <button class="detect-btn" id="detect-btn" onclick="runDetection()" disabled>
+      <div class="spinner"></div>
+      <span>分析文本</span>
+    </button>
+    <div id="detection-panel">
+      <div class="detect-empty">
+        优化完成后点击「分析文本」<br>进行 AIGC 特征评估
+      </div>
+    </div>
+  </aside>
+
+</div><!-- /main-layout -->
+
+<!-- HISTORY OVERLAY -->
+<div class="history-overlay" id="history-overlay">
+  <div class="history-backdrop" onclick="toggleHistory()"></div>
+  <div class="history-drawer">
+    <div class="history-drawer-header">
+      <div class="history-drawer-title">改写历史记录</div>
+      <button class="close-btn" onclick="toggleHistory()">×</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+    <button class="history-clear-btn" onclick="clearHistory()">清空所有记录</button>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">API 密钥设置</div>
+      <button class="close-btn" onclick="closeApiModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field" id="ollama-field" style="display:none">
+        <label class="modal-label">Ollama 地址（已预设）</label>
+        <input class="modal-input" type="text" value="http://10.1.203.100:8000" readonly style="color:var(--text3)">
+        <div class="modal-hint">仅限内网使用 · 无需密钥<br><span id="ollama-status" style="font-size:11px;color:var(--text3)">点击「检测连接」验证</span></div>
+        <button onclick="testOllamaConn()" style="margin-top:8px;padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text2)">检测连接</button>
+      </div>
+      <div class="modal-field" id="deepseek-field" style="display:none">
+        <label class="modal-label">DeepSeek API Key</label>
+        <input class="modal-input" type="password" id="deepseek-key" placeholder="sk-..." oninput="saveKeys()">
+        <div class="modal-hint">在 <a href="https://platform.deepseek.com" target="_blank" style="color:var(--accent)">platform.deepseek.com</a> 获取</div>
+      </div>
+      <div class="modal-field" id="wenxin-field" style="display:none">
+        <label class="modal-label">文心一言 API Key</label>
+        <input class="modal-input" type="password" id="wenxin-key" placeholder="API Key..." oninput="saveKeys()">
+        <div class="modal-hint">在百度智能云控制台获取</div>
+      </div>
+      <div class="modal-field" id="doubao-field" style="display:none">
+        <label class="modal-label">豆包 API Key</label>
+        <input class="modal-input" type="password" id="doubao-key" placeholder="API Key..." oninput="saveKeys()">
+        <div class="modal-hint">在火山引擎控制台获取</div>
+      </div>
+      <div class="modal-hint" style="background:var(--warn-light);padding:8px 10px;border-radius:var(--radius);color:var(--warn);margin-top:4px;">
+        密钥存储在本地浏览器，不会上传至任何服务器
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeApiModal()">取消</button>
+      <button class="btn-primary" onclick="closeApiModal()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── STATE ──
+let currentModel = 'ollama';
+let apiKeys = {};
+let refFiles = [];
+let historyRecords = [];
+let outputText = '';
+let currentAbortController = null;
+let radarChart = null;
+
+// ── INIT ──
+window.onload = () => {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  apiKeys = JSON.parse(localStorage.getItem('aigc_api_keys') || '{}');
+  historyRecords = JSON.parse(localStorage.getItem('aigc_history') || '[]');
+  loadApiKeyInputs();
+  updateApiDot();
+  updateIntensity(document.getElementById('intensity-slider'));
+  // 静默检测 Ollama 连通性
+  if (currentModel === 'ollama') testOllamaConn(true);
+};
+
+// ── MODEL ──
+function onModelChange() {
+  currentModel = document.getElementById('model-select').value;
+  updateApiDot();
+  showApiField();
+}
+
+function showApiField() {
+  ['ollama','deepseek','wenxin','doubao'].forEach(k => {
+    document.getElementById(k+'-field').style.display = k === currentModel ? 'block' : 'none';
+  });
+}
+
+function updateApiDot() {
+  const dot = document.getElementById('api-dot');
+  if (currentModel === 'ollama') { dot.classList.add('active'); return; }
+  dot.classList.toggle('active', !!(apiKeys[currentModel]));
+}
+
+function loadApiKeyInputs() {
+  ['deepseek','wenxin','doubao'].forEach(k => {
+    const el = document.getElementById(k+'-key');
+    if (el && apiKeys[k]) el.value = apiKeys[k];
+  });
+}
+
+function saveKeys() {
+  ['deepseek','wenxin','doubao'].forEach(k => {
+    const el = document.getElementById(k+'-key');
+    if (el) apiKeys[k] = el.value;
+  });
+  localStorage.setItem('aigc_api_keys', JSON.stringify(apiKeys));
+  updateApiDot();
+}
+
+// ── API MODAL ──
+function openApiModal() {
+  showApiField();
+  document.getElementById('api-modal').classList.add('open');
+}
+function closeApiModal() {
+  document.getElementById('api-modal').classList.remove('open');
+}
+
+// ── STRATEGY ──
+function toggleStrategy(el) {
+  setTimeout(() => {
+    const cb = el.querySelector('input[type="checkbox"]');
+    el.classList.toggle('active', cb.checked);
+  }, 0);
+}
+
+function getActiveStrategies() {
+  return [...document.querySelectorAll('.strategy-item.active .strategy-name')].map(e => e.textContent);
+}
+
+// ── INTENSITY ──
+const intensityLabels = ['','轻度润色','轻度改写','均衡改写','较深改写','深度重构'];
+const intensityDescs = ['',
+  '仅调整少数明显套话，最大程度保留原有表达',
+  '微调句式结构，替换常见套话，改动幅度较小',
+  '均衡改写：调整句式结构，替换套话，保留原有逻辑框架',
+  '较大幅度重组句子，注入个人化表达，改写约60%内容',
+  '全面深度重构：重组段落逻辑，大量替换表达方式，保留核心信息'
+];
+function updateIntensity(el) {
+  const v = parseInt(el.value);
+  const pct = ((v-1)/4*100).toFixed(0);
+  el.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--surface3) ${pct}%)`;
+  document.getElementById('intensity-val').textContent = intensityLabels[v];
+  document.getElementById('intensity-desc').textContent = intensityDescs[v];
+}
+
+// ── TAB ──
+function switchTab(tab) {
+  document.getElementById('tab-edit').classList.toggle('active', tab==='edit');
+  document.getElementById('tab-compare').classList.toggle('active', tab==='compare');
+}
+
+// ── FILE UPLOAD (MAIN) ──
+async function handleMainUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showToast('正在解析文件…');
+  try {
+    let text = '';
+    if (file.name.endsWith('.txt')) {
+      text = await file.text();
+    } else if (file.name.endsWith('.docx')) {
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({arrayBuffer: buf});
+      text = result.value;
+    } else if (file.name.endsWith('.pdf')) {
+      text = await extractPdfText(file);
+    }
+    document.getElementById('input-textarea').value = text;
+    updateCharCount();
+    showToast('文件解析成功', 'success');
+  } catch(e) {
+    showToast('解析失败：' + e.message, 'error');
+  }
+  event.target.value = '';
+}
+
+async function extractPdfText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+// ── FILE UPLOAD (REF) ──
+async function handleRefUpload(event) {
+  const files = [...event.target.files];
+  for (const file of files) {
+    showToast(`解析参考文献：${file.name}`);
+    try {
+      let text = '';
+      if (file.name.endsWith('.txt')) {
+        text = await file.text();
+      } else if (file.name.endsWith('.docx')) {
+        const buf = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({arrayBuffer: buf});
+        text = result.value;
+      } else if (file.name.endsWith('.pdf')) {
+        text = await extractPdfText(file);
+      }
+      refFiles.push({ name: file.name, text: text.slice(0, 3000) });
+      renderRefList();
+      showToast(`已添加：${file.name}`, 'success');
+    } catch(e) {
+      showToast(`解析失败：${file.name}`, 'error');
+    }
+  }
+  event.target.value = '';
+}
+
+function renderRefList() {
+  const list = document.getElementById('ref-file-list');
+  list.innerHTML = refFiles.map((f,i) => `
+    <div class="ref-file-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      ${f.name}
+      <button onclick="removeRef(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function removeRef(i) { refFiles.splice(i,1); renderRefList(); }
+
+// ── CHAR COUNT ──
+function updateCharCount() {
+  const len = document.getElementById('input-textarea').value.length;
+  document.getElementById('char-count').textContent = len.toLocaleString() + ' 字';
+}
+
+function clearInput() {
+  document.getElementById('input-textarea').value = '';
+  updateCharCount();
+}
+
+// ── BUILD PROMPT ──
+function buildPrompt(text, strategies, intensity, intent) {
+  const intensityMap = {1:'仅做最小化修改',2:'轻度改写',3:'均衡改写',4:'较深度改写',5:'全面深度重构'};
+  const refContext = refFiles.length > 0
+    ? `\n\n【参考文献摘录】\n${refFiles.map((f,i)=>`[文献${i+1}] ${f.name}:\n${f.text}`).join('\n\n')}`
+    : '';
+  return `你是一位专业的学术写作润色专家，专门帮助教育工作者将AI生成的学术文本改写为具有真实人类写作特征的自然文本，以降低AIGC检测率。
+
+【任务目标】
+对以下文本进行改写，改写强度：${intensityMap[intensity]}。
+
+【写作意图】
+${intent || '学术论文或教育管理案例写作'}
+
+【改写策略】
+${strategies.map((s,i) => `${i+1}. ${s}`).join('\n')}
+
+【降低AIGC率的核心原则】
+- 打破均匀句长，让句子有长有短、有顿挫
+- 避免模板化开头，如"本文旨在""综上所述""值得注意的是"
+- 适当使用不完整句、转折、追问等人类写作习惯
+- 增加具体细节、个人观察或实践经验的描述
+- 避免段落结构过于对称，打破AI的"三段论"惯性
+- 保留学科专业术语，但用法更加灵活自然${refContext}
+
+【待改写文本】
+${text}
+
+【输出要求】
+直接输出改写后的完整文本，不要添加任何说明、标注或"改写后："等前缀。保持原文的核心信息和学术价值。`;
+}
+
+// ── OPTIMIZE ──
+async function startOptimize() {
+  const text = document.getElementById('input-textarea').value.trim();
+  if (!text) { showToast('请先输入或上传待优化文本', 'error'); return; }
+
+  const strategies = getActiveStrategies();
+  if (strategies.length === 0) { showToast('请至少选择一种改写策略', 'error'); return; }
+
+  if (currentAbortController) currentAbortController.abort();
+  currentAbortController = new AbortController();
+
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('.btn-text').textContent = '优化中…';
+
+  document.getElementById('output-placeholder').style.display = 'none';
+  const outputContent = document.getElementById('output-content');
+  outputContent.style.display = 'block';
+  outputContent.innerHTML = '<span class="streaming-cursor"></span>';
+  document.getElementById('output-badge').textContent = '生成中…';
+  document.getElementById('detect-btn').disabled = true;
+  outputText = '';
+
+  const intensity = parseInt(document.getElementById('intensity-slider').value);
+  const intent = document.getElementById('intent-input').value.trim();
+  const prompt = buildPrompt(text, strategies, intensity, intent);
+
+  try {
+    await callModel(prompt, (chunk) => {
+      outputText += chunk;
+      outputContent.innerHTML = escapeHtml(outputText) + '<span class="streaming-cursor"></span>';
+      outputContent.parentElement.scrollTop = outputContent.parentElement.scrollHeight;
+    }, currentAbortController.signal);
+
+    outputContent.innerHTML = escapeHtml(outputText);
+    document.getElementById('output-badge').textContent = '已完成';
+    document.getElementById('detect-btn').disabled = false;
+    saveHistory(text, outputText, strategies, intensity);
+    showToast('优化完成', 'success');
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      outputContent.innerHTML = escapeHtml(outputText) || '<span style="color:var(--danger)">调用失败：' + e.message + '</span>';
+      showToast('调用失败：' + e.message, 'error');
+    }
+    document.getElementById('output-badge').textContent = '出错';
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.querySelector('.btn-text').textContent = '开始优化';
+  }
+}
+
+// ── MODEL CALLS ──
+async function callModel(prompt, onChunk, signal) {
+  if (currentModel === 'ollama') {
+    await callOllama(prompt, onChunk, signal);
+  } else if (currentModel === 'deepseek') {
+    await callDeepSeek(prompt, onChunk, signal);
+  } else if (currentModel === 'wenxin') {
+    await callWenxin(prompt, onChunk, signal);
+  } else if (currentModel === 'doubao') {
+    await callDoubao(prompt, onChunk, signal);
+  }
+}
+
+// ── Ollama 连通性检测 ──
+async function testOllamaConn(silent = false) {
+  const OLLAMA = 'http://10.1.203.100:8000';
+  const el = document.getElementById('ollama-status');
+  if (el) el.innerHTML = '<span style="color:var(--text3)">检测中…</span>';
+  try {
+    const r = await fetch(OLLAMA + '/api/tags', { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const models = (d.models || []).map(m => m.name);
+    const hasModel = models.some(m => m.includes('qwen3.6'));
+    if (hasModel) {
+      if (el) el.innerHTML = '<span style="color:var(--accent2)">✓ qwen3.6:35b 已就绪，可直接使用</span>';
+      if (!silent) showToast('Ollama 连接正常 ✓', 'success');
+    } else {
+      if (el) el.innerHTML = '<span style="color:var(--warn)">⚠ 服务可达，但未找到 qwen3.6:35b<br>已加载：' + (models.join(', ') || '无') + '</span>';
+      if (!silent) showToast('模型未找到，请检查 Ollama', 'error');
+    }
+  } catch(e) {
+    const isCors = e.message && (e.message.includes('fetch') || e.message.includes('Failed'));
+    if (el) el.innerHTML = isCors
+      ? '<span style="color:var(--danger)">⚠ CORS 未开启，需在 Ollama 服务端设置<br><code style=\'font-size:10px;background:var(--surface3);padding:2px 5px;border-radius:3px;\'>OLLAMA_ORIGINS=*</code> 后重启</span>'
+      : '<span style="color:var(--danger)">⚠ 无法连接（仅内网可用）：' + e.message + '</span>';
+    if (!silent) showToast('Ollama 连接失败', 'error');
+  }
+}
+
+async function callOllama(prompt, onChunk, signal) {
+  const OLLAMA = 'http://10.1.203.100:8000';
+  let res;
+  try {
+    // 优先用 OpenAI 兼容接口（支持流式 SSE）
+    res = await fetch(OLLAMA + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ollama' },
+      body: JSON.stringify({
+        model: 'qwen3.6:35b',
+        messages: [{ role: 'user', content: prompt }],
+        stream: true
+      }),
+      signal
+    });
+  } catch(err) {
+    const isCors = err.message && err.message.toLowerCase().includes('fetch');
+    if (isCors) {
+      throw new Error(
+        'CORS 跨域限制，Ollama 服务需设置允许跨域。\n\n' +
+        '请在运行 Ollama 的机器（10.1.203.100）上执行：\n' +
+        '  Linux systemd：\n' +
+        '    sudo systemctl edit ollama\n' +
+        '    写入：[Service]\n' +
+        '         Environment="OLLAMA_ORIGINS=*"\n' +
+        '    sudo systemctl restart ollama\n\n' +
+        '  或临时运行：\n' +
+        '    OLLAMA_ORIGINS="*" ollama serve'
+      );
+    }
+    throw new Error('无法连接 Ollama（仅内网可用）：' + err.message);
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error('Ollama 返回错误 ' + res.status + (body ? '：' + body.slice(0,120) : ''));
+  }
+  // 解析 OpenAI 兼容流式 SSE
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t || t === 'data: [DONE]') continue;
+      if (t.startsWith('data: ')) {
+        try {
+          const obj = JSON.parse(t.slice(6));
+          const text = obj.choices?.[0]?.delta?.content ?? '';
+          if (text) onChunk(text);
+        } catch {}
+      }
+    }
+  }
+}
+
+async function callDeepSeek(prompt, onChunk, signal) {
+  const key = apiKeys.deepseek;
+  if (!key) throw new Error('请先设置 DeepSeek API Key');
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],stream:true}),
+    signal
+  });
+  if (!res.ok) throw new Error(`DeepSeek 错误 ${res.status}`);
+  await parseSSE(res, onChunk);
+}
+
+async function callWenxin(prompt, onChunk, signal) {
+  const key = apiKeys.wenxin;
+  if (!key) throw new Error('请先设置文心一言 API Key');
+  showToast('文心一言调用中（非流式）…');
+  const res = await fetch(`https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.0-8k?access_token=${key}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({messages:[{role:'user',content:prompt}]}),
+    signal
+  });
+  if (!res.ok) throw new Error(`文心一言错误 ${res.status}`);
+  const data = await res.json();
+  if (data.result) onChunk(data.result);
+  else throw new Error(data.error_msg || '文心一言返回异常');
+}
+
+async function callDoubao(prompt, onChunk, signal) {
+  const key = apiKeys.doubao;
+  if (!key) throw new Error('请先设置豆包 API Key');
+  const res = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({model:'doubao-pro-4k',messages:[{role:'user',content:prompt}],stream:true}),
+    signal
+  });
+  if (!res.ok) throw new Error(`豆包错误 ${res.status}`);
+  await parseSSE(res, onChunk);
+}
+
+async function parseSSE(res, onChunk) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const {done,value} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value);
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const d = line.slice(6).trim();
+      if (d === '[DONE]') return;
+      try {
+        const json = JSON.parse(d);
+        const c = json.choices?.[0]?.delta?.content;
+        if (c) onChunk(c);
+      } catch {}
+    }
+  }
+}
+
+// ── DETECTION ──
+async function runDetection() {
+  if (!outputText) return;
+  const btn = document.getElementById('detect-btn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('span').textContent = '分析中…';
+
+  const detectPrompt = `请从以下五个维度分析这段文字的AI写作痕迹，每个维度给出0-100的疑似分（越高越像AI），并简要说明原因。
+
+五个维度：
+1. 句式均匀性（AI倾向于句子长度高度一致）
+2. 套话密度（AI常用模板化表达和过渡语）
+3. 用词可预测性（AI用词高度规范，缺乏个性）
+4. 情境具体度（AI描述抽象，缺少真实细节）
+5. 逻辑自然度（AI逻辑过于完整，缺少人类写作的跳跃和反思）
+
+严格按以下JSON格式返回，不要输出任何其他内容：
+{"dimensions":[{"name":"句式均匀性","score":数字,"comment":"简短说明"},{"name":"套话密度","score":数字,"comment":"简短说明"},{"name":"用词可预测性","score":数字,"comment":"简短说明"},{"name":"情境具体度","score":数字,"comment":"简短说明"},{"name":"逻辑自然度","score":数字,"comment":"简短说明"}],"overall":数字,"summary":"整体评价（30字内）"}
+
+【待分析文本】
+${outputText.slice(0, 1500)}`;
+
+  try {
+    let raw = '';
+    await callModel(detectPrompt, chunk => { raw += chunk; }, new AbortController().signal);
+    const jsonStr = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(jsonStr);
+    renderDetection(result);
+  } catch(e) {
+    showToast('检测失败：' + e.message, 'error');
+    document.getElementById('detection-panel').innerHTML = `<div class="detect-empty">检测失败，请重试</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.querySelector('span').textContent = '重新分析';
+  }
+}
+
+function renderDetection(result) {
+  const overall = Math.round(result.overall);
+  const scoreClass = overall < 35 ? 'score-safe' : overall < 65 ? 'score-warn' : 'score-danger';
+  const scoreText = overall < 35 ? '人工特征明显' : overall < 65 ? '疑似AI痕迹' : '高度AI特征';
+  const barColor = overall < 35 ? '#5C8A3C' : overall < 65 ? '#8C5C10' : '#A33030';
+
+  const dimsHtml = result.dimensions.map(d => {
+    const s = Math.round(d.score);
+    const c = s < 35 ? '#5C8A3C' : s < 65 ? '#8C5C10' : '#A33030';
+    return `<div class="dim-item">
+      <div class="dim-header">
+        <span class="dim-name">${d.name}</span>
+        <span class="dim-score" style="color:${c}">${s}</span>
+      </div>
+      <div class="dim-bar-bg">
+        <div class="dim-bar-fill" style="width:${s}%;background:${c}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('detection-panel').innerHTML = `
+    <div class="score-ring-container">
+      <div class="score-ring-wrapper">
+        <canvas id="score-donut" width="110" height="110"></canvas>
+        <div class="score-center">
+          <div class="score-number">${overall}</div>
+          <div class="score-unit">/ 100</div>
+        </div>
+      </div>
+      <div class="score-label ${scoreClass}">${scoreText}</div>
+    </div>
+    <div class="dimensions-list">${dimsHtml}</div>
+    <div class="detect-notes">${result.summary}</div>
+  `;
+
+  setTimeout(() => {
+    const canvas = document.getElementById('score-donut');
+    if (!canvas) return;
+    if (radarChart) radarChart.destroy();
+    radarChart = new Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [overall, 100-overall],
+          backgroundColor: [barColor, '#E8E4DB'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        cutout: '72%',
+        animation: {duration: 600},
+        plugins: {legend:{display:false},tooltip:{enabled:false}},
+        events: []
+      }
+    });
+  }, 50);
+}
+
+// ── COPY / EXPORT ──
+function copyOutput() {
+  if (!outputText) return;
+  navigator.clipboard.writeText(outputText).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '已复制';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function exportTxt() {
+  if (!outputText) { showToast('暂无内容可导出', 'error'); return; }
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(outputText);
+  a.download = '润色结果_' + formatDate() + '.txt';
+  a.click();
+}
+
+function exportDocx() {
+  if (!outputText) { showToast('暂无内容可导出', 'error'); return; }
+  showToast('DOCX 导出请复制文本后粘贴至 Word');
+  copyOutput();
+}
+
+function rewriteParagraph() {
+  const sel = window.getSelection ? window.getSelection().toString() : '';
+  if (!sel || !outputText) { showToast('请在输出区选中要重写的段落', 'error'); return; }
+  document.getElementById('input-textarea').value = sel;
+  updateCharCount();
+  showToast('已将选中段落填入输入区，调整策略后重新优化');
+}
+
+// ── HISTORY ──
+function saveHistory(original, result, strategies, intensity) {
+  const record = {
+    id: Date.now(),
+    time: new Date().toLocaleString('zh-CN'),
+    model: document.getElementById('model-select').options[document.getElementById('model-select').selectedIndex].text,
+    original: original.slice(0, 100),
+    result: result.slice(0, 100),
+    strategies,
+    intensity
+  };
+  historyRecords.unshift(record);
+  if (historyRecords.length > 50) historyRecords = historyRecords.slice(0, 50);
+  localStorage.setItem('aigc_history', JSON.stringify(historyRecords));
+}
+
+function toggleHistory() {
+  const el = document.getElementById('history-overlay');
+  const isOpen = el.classList.toggle('open');
+  if (isOpen) renderHistoryList();
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('history-list');
+  if (historyRecords.length === 0) {
+    list.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  list.innerHTML = historyRecords.map(r => `
+    <div class="history-item" onclick="loadHistory('${r.id}')">
+      <div class="history-item-meta">
+        <span class="history-item-time">${r.time}</span>
+        <span class="history-item-model">${r.model}</span>
+      </div>
+      <div class="history-item-preview">${r.original}…</div>
+      <div class="history-item-preview-label">→ ${r.result}…</div>
+      <div class="history-item-strategies">
+        ${r.strategies.map(s=>`<span class="history-strategy-tag">${s}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadHistory(id) {
+  const r = historyRecords.find(x => x.id == id);
+  if (!r) return;
+  document.getElementById('input-textarea').value = r.original;
+  updateCharCount();
+  toggleHistory();
+  showToast('已载入历史记录原文');
+}
+
+function clearHistory() {
+  if (!confirm('确认清空所有历史记录？')) return;
+  historyRecords = [];
+  localStorage.removeItem('aigc_history');
+  renderHistoryList();
+  showToast('历史记录已清空');
+}
+
+// ── UTILS ──
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatDate() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function showToast(msg, type='') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+</body>
+</html>
 
