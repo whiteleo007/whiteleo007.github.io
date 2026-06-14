@@ -3,57 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>小白的ai工具库 · whiteleo007</title>
+<title>小白ai教育工具平台 · whiteleo007</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#050810;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;color:#e0e6f0}
-#intro{position:fixed;inset:0;z-index:2000;background:#050810;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.2s cubic-bezier(.4,0,.2,1)}
-#intro.out{opacity:0;pointer-events:none}
-.intro-orb{width:130px;height:130px;position:relative;margin-bottom:36px}
-.intro-orb::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(120,170,255,.3),rgba(168,85,247,.15) 50%,transparent 72%);animation:orbP 3s ease infinite}
-.intro-orb::after{content:'';position:absolute;inset:18px;border-radius:50%;border:1px solid rgba(120,170,255,.35);animation:spin 4s linear infinite}
-.intro-orb b{position:absolute;inset:32px;border-radius:50%;display:block;background:radial-gradient(circle at 45% 45%,rgba(0,229,255,.55),rgba(79,142,255,.3) 60%,transparent);filter:blur(4px);animation:ig 2.5s ease infinite alternate}
-.lo{position:absolute;border-radius:50%;filter:blur(25px);animation:fo 6s ease-in-out infinite}
-.lo1{width:220px;height:220px;top:12%;left:8%;background:rgba(79,142,255,.09)}
-.lo2{width:180px;height:180px;top:55%;right:10%;background:rgba(168,85,247,.08);animation-delay:1.5s}
-.lo3{width:200px;height:200px;bottom:12%;left:28%;background:rgba(0,229,255,.07);animation-delay:3s}
-@keyframes fo{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(18px,-22px) scale(1.1)}66%{transform:translate(-14px,16px) scale(.95)}}
-@keyframes orbP{0%,100%{box-shadow:0 0 40px rgba(120,170,255,.25),0 0 80px rgba(168,85,247,.12);transform:scale(1)}50%{box-shadow:0 0 60px rgba(0,229,255,.35),0 0 100px rgba(79,142,255,.18);transform:scale(1.05)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes ig{0%{opacity:.6;transform:scale(.9)}100%{opacity:1;transform:scale(1.1)}}
-.intro-title{font-size:26px;font-weight:300;letter-spacing:.35em;color:rgba(200,218,248,.88);opacity:0;animation:fsu .8s ease .4s forwards}
-.intro-sub{margin-top:10px;font-size:11px;letter-spacing:.25em;color:rgba(120,148,210,.55);opacity:0;animation:fsu .8s ease .8s forwards}
-.intro-line{margin-top:40px;width:180px;height:1px;background:rgba(120,170,255,.18);position:relative;opacity:0;animation:fsu .4s ease 1.2s forwards}
-.intro-line::after{content:'';position:absolute;top:0;left:0;width:0;height:100%;background:linear-gradient(90deg,transparent,rgba(0,229,255,.9),transparent);animation:ls 1.5s ease 1.5s forwards}
-@keyframes ls{to{width:100%;left:100%}}
-@keyframes fsu{to{opacity:1;transform:translateY(0)}}
-.intro-title,.intro-sub{transform:translateY(12px)}
+html,body{width:100%;height:100%;overflow:hidden;background:#020a18;font-family:'Consolas','Courier New','PingFang SC',monospace;color:#c8e0ff}
 
+/* ══════ BOOT INTRO ══════ */
+#boot{position:fixed;inset:0;z-index:2000;background:radial-gradient(ellipse at 50% 50%,#091428 0%,#020a18 70%);display:flex;align-items:center;justify-content:center;transition:opacity 1s ease}
+#boot.out{opacity:0;pointer-events:none}
+
+.boot-wrap{width:min(700px,90vw);position:relative}
+
+/* scan line overlay */
+.boot-wrap::after{content:'';position:absolute;inset:-40px -30px;border:1px solid rgba(100,180,255,.08);border-radius:4px;pointer-events:none;animation:borderFlash 3s ease infinite}
+@keyframes borderFlash{0%,100%{border-color:rgba(100,180,255,.08)}50%{border-color:rgba(100,180,255,.2)}}
+
+/* top title bar */
+.boot-top{text-align:center;padding:10px 0 14px;border-bottom:1px solid rgba(80,160,255,.2);margin-bottom:16px;opacity:0}
+.boot-top-text{font-size:clamp(13px,2vw,16px);font-weight:700;letter-spacing:.35em;color:#ff4444;text-shadow:0 0 20px rgba(255,68,68,.4)}
+
+/* central logo area */
+.boot-logo{text-align:center;padding:20px 0;position:relative;opacity:0}
+.boot-logo-text{font-size:clamp(26px,4.5vw,42px);font-weight:700;letter-spacing:.2em;color:#40e0ff;text-shadow:0 0 30px rgba(64,224,255,.5),0 0 60px rgba(64,224,255,.2)}
+.boot-logo-sub{margin-top:6px;font-size:11px;letter-spacing:.3em;color:rgba(100,180,255,.5)}
+
+/* light burst behind logo */
+.boot-logo::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:80px;background:radial-gradient(ellipse,rgba(64,224,255,.15),transparent 70%);filter:blur(10px);animation:logoBurst 2s ease .8s both}
+@keyframes logoBurst{from{opacity:0;transform:translate(-50%,-50%) scaleX(.3)}to{opacity:1;transform:translate(-50%,-50%) scaleX(1)}}
+
+/* scanning light */
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(64,224,255,.6),transparent);opacity:0;animation:scanDown 2s ease 1.5s forwards}
+@keyframes scanDown{0%{top:0;opacity:.8}100%{top:100%;opacity:0}}
+
+/* main HUD panel */
+.boot-panel{border:1px solid rgba(80,160,255,.2);border-radius:3px;padding:16px 20px;margin:16px 0;background:rgba(8,20,50,.6);position:relative;opacity:0;overflow:hidden}
+.boot-panel::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(64,224,255,.03),transparent 40%);pointer-events:none}
+
+/* system init lines */
+.sys-line{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:clamp(11px,1.5vw,13px);letter-spacing:.08em;color:rgba(160,200,240,.7);opacity:0;transform:translateX(-10px)}
+.sys-line .label{color:#ff6666;font-weight:700;min-width:28px;text-align:center;font-size:clamp(12px,1.6vw,14px)}
+.sys-line .rest{color:rgba(180,210,240,.85)}
+.sys-dot{color:#40e0ff;font-size:8px;opacity:.5}
+
+/* progress section */
+.boot-progress{margin:16px 0 8px;opacity:0}
+.prog-row{display:flex;align-items:center;gap:12px;margin:6px 0;font-size:11px;letter-spacing:.1em}
+.prog-label{color:rgba(120,180,240,.6);min-width:160px;white-space:nowrap}
+.prog-bar{flex:1;height:10px;background:rgba(20,50,100,.5);border:1px solid rgba(80,160,255,.15);border-radius:1px;overflow:hidden;position:relative}
+.prog-fill{height:100%;width:0;border-radius:1px;transition:width .6s ease}
+.pf1{background:linear-gradient(90deg,#ff6644,#ffaa33)}
+.pf2{background:linear-gradient(90deg,#44cc66,#66ff88)}
+.pf3{background:linear-gradient(90deg,#4488ff,#44ddff)}
+.prog-pct{color:rgba(100,200,255,.7);min-width:40px;text-align:right}
+
+/* status bar */
+.boot-status{display:flex;align-items:center;justify-content:space-between;padding:10px 0 4px;border-top:1px solid rgba(80,160,255,.15);margin-top:12px;opacity:0}
+.status-left{display:flex;align-items:center;gap:8px}
+.status-arrows{color:#44ff88;font-size:13px;letter-spacing:2px;animation:arrowBlink .4s step-end infinite}
+@keyframes arrowBlink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-launch{color:#44ff88;font-weight:700;font-size:14px;letter-spacing:.2em;text-shadow:0 0 10px rgba(68,255,136,.4)}
+.status-right{display:flex;align-items:center;gap:10px;font-size:10px;color:rgba(100,180,255,.5);letter-spacing:.1em}
+.status-diamond{width:12px;height:12px;background:linear-gradient(135deg,#44ddff,#4488ff);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);animation:diamondPulse 1s ease infinite}
+@keyframes diamondPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+/* bottom bar */
+.boot-bottom{display:flex;justify-content:space-between;font-size:10px;color:rgba(100,160,220,.35);letter-spacing:.1em;padding-top:8px;border-top:1px solid rgba(80,160,255,.1);opacity:0}
+
+/* side label */
+.side-label{position:absolute;left:-26px;top:50%;transform:rotate(-90deg) translateX(-50%);transform-origin:0 0;font-size:9px;letter-spacing:.2em;color:rgba(80,160,255,.25);white-space:nowrap;opacity:0}
+
+/* corner decorations */
+.corner{position:absolute;width:10px;height:10px;opacity:0}
+.corner::before,.corner::after{content:'';position:absolute;background:rgba(64,224,255,.4)}
+.c-tl{top:-6px;left:-6px}.c-tl::before{width:10px;height:1px;top:0;left:0}.c-tl::after{width:1px;height:10px;top:0;left:0}
+.c-tr{top:-6px;right:-6px}.c-tr::before{width:10px;height:1px;top:0;right:0}.c-tr::after{width:1px;height:10px;top:0;right:0}
+.c-bl{bottom:-6px;left:-6px}.c-bl::before{width:10px;height:1px;bottom:0;left:0}.c-bl::after{width:1px;height:10px;bottom:0;left:0}
+.c-br{bottom:-6px;right:-6px}.c-br::before{width:10px;height:1px;bottom:0;right:0}.c-br::after{width:1px;height:10px;bottom:0;right:0}
+
+/* ══════ MAIN PAGE ══════ */
 canvas#cv{position:fixed;inset:0;z-index:0}
-
 #scene{position:fixed;inset:0;z-index:10;display:none}
 #scene.show{display:block;animation:sfi 1s ease both}
 @keyframes sfi{from{opacity:0}to{opacity:1}}
 .orbit-track{position:absolute;top:50%;left:50%;width:0;height:0;z-index:10}
 
-.tool-card{
-  position:absolute;width:148px;height:192px;
-  transform:translate(-50%,-50%);
-  background:rgba(10,14,30,.92);
-  border:1px solid rgba(120,170,255,.1);
-  border-radius:14px;padding:18px 14px 14px;cursor:pointer;
-  transition:transform .35s cubic-bezier(.22,.9,.36,1),width .35s,height .35s,box-shadow .3s,border-color .3s,opacity .3s;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:0 2px 16px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.03);
-  will-change:transform,opacity;
-}
+.tool-card{position:absolute;width:148px;height:192px;transform:translate(-50%,-50%);background:rgba(10,14,30,.92);border:1px solid rgba(120,170,255,.1);border-radius:14px;padding:18px 14px 14px;cursor:pointer;transition:transform .35s cubic-bezier(.22,.9,.36,1),width .35s,height .35s,box-shadow .3s,border-color .3s,opacity .3s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.03);will-change:transform,opacity;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
 .tool-card::before{content:'';position:absolute;top:-60%;left:-60%;width:220%;height:220%;background:conic-gradient(from 120deg,transparent 0%,rgba(200,225,255,.03) 15%,transparent 30%);pointer-events:none;transition:transform .8s}
 .tool-card:hover::before{transform:rotate(60deg)}
 .tool-card::after{content:'';position:absolute;top:0;left:14px;right:14px;height:2px;border-radius:0 0 2px 2px;background:var(--tc-accent);opacity:.45;transition:opacity .3s}
 .tool-card:hover::after{opacity:1}
 .tool-card:hover{width:270px!important;height:290px!important;z-index:300!important;border-color:var(--tc-border);box-shadow:0 0 40px var(--tc-shadow),0 0 80px var(--tc-shadow2,rgba(0,0,0,.3)),0 24px 64px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06)}
-
 .tc1{--tc-accent:linear-gradient(90deg,#6b9fff,#88d0ff);--tc-border:rgba(107,159,255,.5);--tc-shadow:rgba(107,159,255,.2);--tc-shadow2:rgba(107,159,255,.06);--tc-tag:#88c0ff}
 .tc2{--tc-accent:linear-gradient(90deg,#c084fc,#e0a8ff);--tc-border:rgba(192,132,252,.45);--tc-shadow:rgba(192,132,252,.18);--tc-shadow2:rgba(192,132,252,.05);--tc-tag:#d4a8ff}
 .tc3{--tc-accent:linear-gradient(90deg,#34d399,#5eead4);--tc-border:rgba(52,211,153,.45);--tc-shadow:rgba(52,211,153,.18);--tc-shadow2:rgba(52,211,153,.05);--tc-tag:#6ee7b7}
@@ -61,414 +100,201 @@ canvas#cv{position:fixed;inset:0;z-index:0}
 .tc5{--tc-accent:linear-gradient(90deg,#60a5fa,#93c5fd);--tc-border:rgba(96,165,250,.45);--tc-shadow:rgba(96,165,250,.18);--tc-shadow2:rgba(96,165,250,.05);--tc-tag:#93c5fd}
 .tc6{--tc-accent:linear-gradient(90deg,#f472b6,#f9a8d4);--tc-border:rgba(244,114,182,.45);--tc-shadow:rgba(244,114,182,.18);--tc-shadow2:rgba(244,114,182,.05);--tc-tag:#f9a8d4}
 .tc7{--tc-accent:linear-gradient(90deg,#a78bfa,#c4b5fd);--tc-border:rgba(167,139,250,.45);--tc-shadow:rgba(167,139,250,.18);--tc-shadow2:rgba(167,139,250,.05);--tc-tag:#c4b5fd}
-
 .card-icon{font-size:28px;line-height:1;margin-bottom:10px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
-.card-name{font-size:13px;font-weight:600;line-height:1.5;color:rgba(225,235,252,.93);letter-spacing:.04em;flex-shrink:0}
+.card-name{font-size:13px;font-weight:600;line-height:1.5;color:rgba(225,235,252,.93);letter-spacing:.04em;flex-shrink:0;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
 .card-tag{margin-top:auto;font-size:9px;letter-spacing:.13em;color:var(--tc-tag,#88c0ff);opacity:.65;padding-top:8px}
-.card-detail{opacity:0;max-height:0;overflow:hidden;transition:opacity .3s .08s,max-height .35s;font-size:12px;color:rgba(185,200,232,.7);line-height:1.75;margin-top:8px;padding-top:8px;border-top:1px solid rgba(120,170,255,.08)}
+.card-detail{opacity:0;max-height:0;overflow:hidden;transition:opacity .3s .08s,max-height .35s;font-size:12px;color:rgba(185,200,232,.7);line-height:1.75;margin-top:8px;padding-top:8px;border-top:1px solid rgba(120,170,255,.08);font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
 .tool-card:hover .card-detail{opacity:1;max-height:130px}
 .card-enter{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;letter-spacing:.15em;color:var(--tc-tag,#88c0ff);opacity:0;transition:opacity .3s .15s}
 .tool-card:hover .card-enter{opacity:.85}
-
-.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;pointer-events:none}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;pointer-events:none;font-family:'Segoe UI','PingFang SC',sans-serif}
 .tb-left,.tb-right{pointer-events:auto}
 .tb-left{display:flex;align-items:center;gap:10px}
 .tb-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.5);animation:db 2s ease infinite}
 @keyframes db{0%,100%{opacity:1}50%{opacity:.3}}
 .tb-name{font-size:11px;letter-spacing:.2em;color:rgba(180,198,230,.45);font-weight:300}
 .tb-right{font-size:10px;letter-spacing:.15em;color:rgba(120,148,210,.35)}
-.bottom-hint{position:fixed;bottom:20px;left:0;right:0;text-align:center;z-index:50;font-size:11px;letter-spacing:.22em;color:rgba(120,148,210,.25);pointer-events:none}
-
-@media(max-width:768px){
-  .tool-card{width:112px!important;height:154px!important;padding:12px 10px 10px}
-  .card-icon{font-size:22px}.card-name{font-size:11px}
-  .tool-card:hover{width:232px!important;height:262px!important}
-}
+.bottom-hint{position:fixed;bottom:20px;left:0;right:0;text-align:center;z-index:50;font-size:11px;letter-spacing:.22em;color:rgba(120,148,210,.25);pointer-events:none;font-family:'Segoe UI','PingFang SC',sans-serif}
+@media(max-width:768px){.tool-card{width:112px!important;height:154px!important;padding:12px 10px 10px}.card-icon{font-size:22px}.card-name{font-size:11px}.tool-card:hover{width:232px!important;height:262px!important}.boot-wrap{width:92vw}.sys-line .label{min-width:20px}}
 </style>
 </head>
 <body>
 
-<div id="intro">
-  <div class="lo lo1"></div><div class="lo lo2"></div><div class="lo lo3"></div>
-  <div class="intro-orb"><b></b></div>
-  <div class="intro-title">小白的ai工具库</div>
-  <div class="intro-sub">EDUCATION DATA TOOLS · whiteleo007</div>
-  <div class="intro-line"></div>
+<!-- ══════ BOOT SEQUENCE ══════ -->
+<div id="boot">
+  <div class="boot-wrap">
+    <div class="corner c-tl"></div><div class="corner c-tr"></div>
+    <div class="corner c-bl"></div><div class="corner c-br"></div>
+    <div class="side-label" id="sideLabel">EDU-PLATFORM-V1</div>
+
+    <div class="boot-top" id="bootTop">
+      <div class="boot-top-text">EDUCATION DATA OPERATION SYSTEM</div>
+    </div>
+
+    <div class="boot-logo" id="bootLogo">
+      <div class="boot-logo-text" id="logoText"></div>
+      <div class="boot-logo-sub">whiteleo007 · Education Intelligence</div>
+    </div>
+
+    <div class="scan-line"></div>
+
+    <div class="boot-panel" id="bootPanel">
+      <div class="sys-line" id="sl0"><span class="label">E</span><span class="sys-dot">●</span><span class="rest">DUCATION</span></div>
+      <div class="sys-line" id="sl1"><span class="label">D</span><span class="sys-dot">●</span><span class="rest">ATA</span></div>
+      <div class="sys-line" id="sl2"><span class="label">U</span><span class="sys-dot">●</span><span class="rest">NIFIED</span></div>
+      <div class="sys-line" id="sl3"><span class="label">T</span><span class="sys-dot">●</span><span class="rest">OOLS</span></div>
+      <div class="sys-line" id="sl4"><span class="label">O</span><span class="sys-dot">●</span><span class="rest">NLINE</span></div>
+      <div class="sys-line" id="sl5"><span class="label">O</span><span class="sys-dot">●</span><span class="rest">PTIMIZED</span></div>
+      <div class="sys-line" id="sl6"><span class="label">L</span><span class="sys-dot">●</span><span class="rest">EARNING</span></div>
+      <div class="sys-line" id="sl7" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(80,160,255,.1)"><span style="color:#44ff88;font-weight:700;letter-spacing:.15em">PLATFORM</span></div>
+    </div>
+
+    <div class="boot-progress" id="bootProgress">
+      <div class="prog-row"><span class="prog-label">CENTRAL CONNECTION ···</span><div class="prog-bar"><div class="prog-fill pf1" id="pf1"></div></div><span class="prog-pct" id="pp1">0%</span></div>
+      <div class="prog-row"><span class="prog-label">DATA MODULE SYNC ···</span><div class="prog-bar"><div class="prog-fill pf2" id="pf2"></div></div><span class="prog-pct" id="pp2">0%</span></div>
+      <div class="prog-row"><span class="prog-label">TOOL SYSTEM READY ···</span><div class="prog-bar"><div class="prog-fill pf3" id="pf3"></div></div><span class="prog-pct" id="pp3">0%</span></div>
+    </div>
+
+    <div class="boot-status" id="bootStatus">
+      <div class="status-left">
+        <span class="status-arrows">►►►►</span>
+        <span class="status-launch" id="launchText"></span>
+      </div>
+      <div class="status-right">
+        <span class="status-diamond"></span>
+        <span>EDU SYSTEM</span>
+        <span class="status-diamond"></span>
+      </div>
+    </div>
+
+    <div class="boot-bottom" id="bootBottom">
+      <span>PLATFORM INIT SEQUENCE ···</span>
+      <span>WILL BE READY, PLEASE WAIT→</span>
+    </div>
+  </div>
 </div>
 
 <canvas id="cv"></canvas>
-
 <div id="scene">
-  <div class="topbar">
-    <div class="tb-left"><div class="tb-dot"></div><div class="tb-name">EDU DATA TOOLS</div></div>
-    <div class="tb-right">7 TOOLS ONLINE</div>
-  </div>
+  <div class="topbar"><div class="tb-left"><div class="tb-dot"></div><div class="tb-name">EDU DATA TOOLS</div></div><div class="tb-right">7 TOOLS ONLINE</div></div>
   <div class="orbit-track" id="orbit"></div>
   <div class="bottom-hint">HOVER TO PREVIEW · CLICK TO ENTER</div>
 </div>
 
 <script>
 (function(){
-  var cv = document.getElementById('cv');
-  var ctx = cv.getContext('2d');
-  var W, H, cx, cy;
-  var stars = [];
-  var dust = [];
-  var flowP = [];
-  var running = false;
-  var gAng = 0;
-  var DUST_MAX = 200;
-  var FLOW_MAX = 90;
-
-  function resize(){
-    W = cv.width = innerWidth;
-    H = cv.height = innerHeight;
-    cx = W / 2;
-    cy = H / 2;
-    initStars();
-  }
-
-  function initStars(){
-    stars = [];
-    for(var i = 0; i < 400; i++){
-      var bright = Math.random() < 0.12;
-      stars.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: bright ? 1.2 + Math.random() * 1.6 : 0.3 + Math.random() * 1,
-        base: bright ? 0.7 + Math.random() * 0.3 : 0.2 + Math.random() * 0.45,
-        ph: Math.random() * 6.28,
-        sp: 0.002 + Math.random() * 0.004,
-        hue: Math.random() < 0.3 ? 200 + Math.random() * 70 : -1
-      });
-    }
-  }
-
-  resize();
-  addEventListener('resize', resize);
-
-  function drawStars(t){
-    for(var i = 0; i < stars.length; i++){
-      var s = stars[i];
-      var a = s.base * (0.55 + 0.45 * Math.sin(s.ph + t * s.sp));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, 6.28);
-      if(s.hue < 0){
-        ctx.fillStyle = 'rgba(235,240,255,' + a.toFixed(2) + ')';
-      } else {
-        ctx.fillStyle = 'hsla(' + s.hue + ',72%,78%,' + a.toFixed(2) + ')';
-      }
-      ctx.fill();
-      if(s.r > 1.6){
-        var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3.5);
-        var gc = s.hue < 0
-          ? 'rgba(200,220,255,' + (a * 0.18).toFixed(3) + ')'
-          : 'hsla(' + s.hue + ',65%,72%,' + (a * 0.15).toFixed(3) + ')';
-        g.addColorStop(0, gc);
-        g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g;
-        ctx.fillRect(s.x - s.r * 3.5, s.y - s.r * 3.5, s.r * 7, s.r * 7);
-      }
-    }
-  }
-
-  var dustPal = [[140,180,255],[100,200,255],[180,140,255],[200,170,255],[80,220,240],[160,210,255]];
-
-  function spawnDust(){
-    var ang = Math.random() * 6.28;
-    var spd = 0.15 + Math.random() * 0.6;
-    var col = dustPal[Math.floor(Math.random() * dustPal.length)];
-    dust.push({
-      x: cx + (Math.random() - 0.5) * 16,
-      y: cy + (Math.random() - 0.5) * 10,
-      vx: Math.cos(ang) * spd,
-      vy: Math.sin(ang) * spd * 0.55,
-      r: 0.3 + Math.random() * 1.5,
-      a: 0.4 + Math.random() * 0.5,
-      col: col,
-      decay: 0.001 + Math.random() * 0.003
-    });
-  }
-
-  function updateDrawDust(){
-    var next = [];
-    for(var i = 0; i < dust.length; i++){
-      var d = dust[i];
-      d.x += d.vx; d.y += d.vy;
-      var dx = d.x - cx, dy = d.y - cy;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      if(dist > 1){ d.vx += -dy / dist * 0.003; d.vy += dx / dist * 0.003; }
-      d.vx *= 0.999; d.vy *= 0.999;
-      d.a -= d.decay;
-      if(d.a > 0.01){
-        next.push(d);
-        var c = d.col;
-        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.28);
-        ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + d.a.toFixed(3) + ')';
-        ctx.fill();
-        if(d.r > 1){
-          ctx.beginPath(); ctx.arc(d.x, d.y, d.r * 3, 0, 6.28);
-          ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (d.a * 0.08).toFixed(3) + ')';
-          ctx.fill();
-        }
-      }
-    }
-    dust = next;
-  }
-
-  function drawGalaxy(t){
-    gAng += 0.002;
-
-    var h0 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
-    h0.addColorStop(0, 'rgba(110,160,255,.06)');
-    h0.addColorStop(0.3, 'rgba(150,120,240,.03)');
-    h0.addColorStop(0.7, 'rgba(80,180,255,.015)');
-    h0.addColorStop(1, 'transparent');
-    ctx.fillStyle = h0;
-    ctx.fillRect(cx - 200, cy - 200, 400, 400);
-
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate(gAng);
-    for(var arm = 0; arm < 4; arm++){
-      ctx.save(); ctx.rotate(arm * Math.PI / 2);
-      ctx.beginPath();
-      for(var tt = 0; tt < 5.5; tt += 0.015){
-        var rr = 6 + tt * 20;
-        var aa = tt * 1.1;
-        var xx = Math.cos(aa) * rr;
-        var yy = Math.sin(aa) * rr * 0.45;
-        if(tt < 0.001) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
-      }
-      ctx.strokeStyle = 'rgba(140,180,255,.09)'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.strokeStyle = 'rgba(190,160,255,.045)'; ctx.lineWidth = 6; ctx.stroke();
-      ctx.restore();
-    }
-    ctx.restore();
-
-    var g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 65);
-    g1.addColorStop(0, 'rgba(200,220,255,.22)');
-    g1.addColorStop(0.25, 'rgba(140,180,255,.12)');
-    g1.addColorStop(0.6, 'rgba(130,110,230,.04)');
-    g1.addColorStop(1, 'transparent');
-    ctx.fillStyle = g1; ctx.beginPath(); ctx.arc(cx, cy, 65, 0, 6.28); ctx.fill();
-
-    var pulse = 0.85 + 0.15 * Math.sin(t * 0.002);
-    var g2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22 * pulse);
-    g2.addColorStop(0, 'rgba(230,240,255,' + (0.55 * pulse).toFixed(2) + ')');
-    g2.addColorStop(0.35, 'rgba(160,200,255,.25)');
-    g2.addColorStop(1, 'transparent');
-    ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(cx, cy, 22 * pulse, 0, 6.28); ctx.fill();
-
-    var g3 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 6);
-    g3.addColorStop(0, 'rgba(240,248,255,.85)');
-    g3.addColorStop(1, 'rgba(180,210,255,0)');
-    ctx.fillStyle = g3; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 6.28); ctx.fill();
-
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate(-gAng * 0.6); ctx.scale(1, 0.32);
-    var rings = [85, 110, 140];
-    for(var ri = 0; ri < rings.length; ri++){
-      ctx.beginPath(); ctx.arc(0, 0, rings[ri], 0, 6.28);
-      ctx.strokeStyle = 'rgba(120,170,255,' + (0.055 - 0.015 * ri).toFixed(3) + ')';
-      ctx.lineWidth = 0.8; ctx.stroke();
-    }
-    ctx.restore();
-
-    // galaxy dust sparkles
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate(gAng * 0.5);
-    for(var di = 0; di < 40; di++){
-      var a2 = (di / 40) * 6.28 + gAng * 2;
-      var dd = 20 + (di % 7) * 12 + Math.sin(a2 * 3) * 8;
-      var px = Math.cos(a2) * dd;
-      var py = Math.sin(a2) * dd * 0.4;
-      var sz = 0.6 + Math.sin(a2 + di) * 0.4;
-      var al = 0.15 + Math.sin(a2 * 2 + di) * 0.1;
-      ctx.beginPath(); ctx.arc(px, py, sz, 0, 6.28);
-      ctx.fillStyle = di % 3 === 0
-        ? 'rgba(180,140,255,' + al.toFixed(2) + ')'
-        : 'rgba(140,190,255,' + al.toFixed(2) + ')';
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  var flowHues = [[80,170,255],[0,210,240],[160,120,250],[50,200,200],[130,180,255]];
-
-  function spawnFlow(){
-    var c = flowHues[Math.floor(Math.random() * flowHues.length)];
-    var edge = Math.floor(Math.random() * 4);
-    var x, y, vx, vy;
-    var sp = 0.2 + Math.random() * 0.5;
-    if(edge === 0){ x = Math.random() * W; y = -4; vx = (Math.random() - 0.5) * 0.4; vy = sp; }
-    else if(edge === 1){ x = W + 4; y = Math.random() * H; vx = -sp; vy = (Math.random() - 0.5) * 0.4; }
-    else if(edge === 2){ x = Math.random() * W; y = H + 4; vx = (Math.random() - 0.5) * 0.4; vy = -sp; }
-    else { x = -4; y = Math.random() * H; vx = sp; vy = (Math.random() - 0.5) * 0.4; }
-    flowP.push({ x:x, y:y, vx:vx, vy:vy, r:0.4+Math.random()*1.4, a:0.25+Math.random()*0.4, c:c, decay:0.001+Math.random()*0.002 });
-  }
-
-  function updateDrawFlow(){
-    var next = [];
-    for(var i = 0; i < flowP.length; i++){
-      var p = flowP[i];
-      p.x += p.vx; p.y += p.vy;
-      p.vx += (Math.random() - 0.5) * 0.012;
-      p.vy += (Math.random() - 0.5) * 0.012;
-      p.a -= p.decay;
-      if(p.a > 0.01 && p.x > -50 && p.x < W + 50 && p.y > -50 && p.y < H + 50){
-        next.push(p);
-        var c = p.c;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28);
-        ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + p.a.toFixed(3) + ')';
-        ctx.fill();
-        if(p.r > 1){
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 2.5, 0, 6.28);
-          ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (p.a * 0.06).toFixed(3) + ')';
-          ctx.fill();
-        }
-      }
-    }
-    flowP = next;
-  }
-
-  function drawGrid(){
-    ctx.strokeStyle = 'rgba(60,100,180,.025)';
-    ctx.lineWidth = 0.5;
-    var g = 64;
-    for(var x = 0; x < W; x += g){ ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for(var y = 0; y < H; y += g){ ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-  }
-
-  function drawVignette(){
-    var vg = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.3, cx, cy, Math.max(W, H) * 0.75);
-    vg.addColorStop(0, 'transparent');
-    vg.addColorStop(1, 'rgba(3,5,12,.45)');
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  var t0 = performance.now();
-
-  function render(ts){
-    requestAnimationFrame(render);
-    if(!running) return;
-    var t = ts - t0;
-
-    ctx.fillStyle = '#050810';
-    ctx.fillRect(0, 0, W, H);
-
-    drawGrid();
-    drawStars(t);
-
-    if(dust.length < DUST_MAX && Math.random() < 0.35) spawnDust();
-    if(dust.length < DUST_MAX && Math.random() < 0.2) spawnDust();
-    updateDrawDust();
-
-    drawGalaxy(t);
-
-    if(flowP.length < FLOW_MAX && Math.random() < 0.2) spawnFlow();
-    updateDrawFlow();
-
-    drawVignette();
-  }
-  requestAnimationFrame(render);
-
-  // ══════ INTRO → SCENE ══════
-  var intro = document.getElementById('intro');
-  var scene = document.getElementById('scene');
-
-  setTimeout(function(){
-    intro.classList.add('out');
-    setTimeout(function(){
-      intro.style.display = 'none';
-      scene.classList.add('show');
-      running = true;
-      initOrbit();
-    }, 1200);
-  }, 3200);
-
-  // ══════ ORBIT CARDS ══════
-  var tools = [
-    {name:'德育仪表盘',icon:'🏫',href:'./Edu-visual/index.html',cls:'tc1',tag:'德育管理',desc:'学生德育数据可视化管理，多维度行为评估与班级成长追踪。'},
-    {name:'论文降重润色平台',icon:'✍️',href:'./aigc_optimizer_v3/index.html',cls:'tc2',tag:'AIGC 写作',desc:'AI 驱动学术写作优化工具，智能降重检测与语义润色一体化。'},
-    {name:'安阳学区学业质量<br>检测分析看板',icon:'📊',href:'./chengji/index.html',cls:'tc3',tag:'成绩分析',desc:'期末成绩多维可视化分析，支持学校横向对比与班级下钻。'},
-    {name:'小学数学错题训练器',icon:'🧮',href:'./cuoti/index.html',cls:'tc4',tag:'错题训练',desc:'智能错题归类与针对性训练，帮助学生精准突破薄弱知识点。'},
-    {name:'学业监测数据<br>可视化分析平台',icon:'📈',href:'./jiance/index.html',cls:'tc5',tag:'监测分析',desc:'区域监测数据多维聚合，能力雷达图与趋势分析追踪。'},
-    {name:'MD 格式转化器',icon:'📝',href:'./md/index.html',cls:'tc6',tag:'文档工具',desc:'Markdown 文档在线转换与格式化，支持多种导出方式。'},
-    {name:'校内单门学科<br>质量分析平台',icon:'🔬',href:'./xuqing/index.html',cls:'tc7',tag:'学科诊断',desc:'单科成绩深度解析，知识点诊断与个性化教学改进建议。'},
+  // ══════ BOOT SEQUENCE ANIMATION ══════
+  var boot=document.getElementById('boot'),scene=document.getElementById('scene'),transitioned=false;
+  var timeline=[
+    // [delay, action]
+    [200, function(){ anim('bootTop','opacity','1'); anim('sideLabel','opacity','1'); corners(1); }],
+    [600, function(){ anim('bootLogo','opacity','1'); typeText('logoText','E.D.U.T.O.O.L',0); }],
+    [1400, function(){ anim('bootPanel','opacity','1'); }],
+    [1600, function(){ showLine(0); }],
+    [1750, function(){ showLine(1); }],
+    [1900, function(){ showLine(2); }],
+    [2050, function(){ showLine(3); }],
+    [2200, function(){ showLine(4); }],
+    [2350, function(){ showLine(5); }],
+    [2500, function(){ showLine(6); }],
+    [2700, function(){ showLine(7); }],
+    [2900, function(){ anim('bootProgress','opacity','1'); fillBar('pf1','pp1',100,600); }],
+    [3200, function(){ fillBar('pf2','pp2',100,500); }],
+    [3500, function(){ fillBar('pf3','pp3',100,400); }],
+    [4100, function(){ anim('bootStatus','opacity','1'); typeText('launchText','LAUNCH',0); }],
+    [4400, function(){ anim('bootBottom','opacity','1'); }],
+    [5200, function(){ endBoot(); }],
   ];
 
-  var orbitEl = document.getElementById('orbit');
-  var cardEls = [];
-  var orbitRx, orbitRy;
-  var angle = 0;
-  var SPEED = 0.005;
-  var hovIdx = -1, paused = false;
+  timeline.forEach(function(item){ setTimeout(item[1], item[0]); });
 
-  function calcR(){
-    orbitRx = Math.min(W, H) * 0.38;
-    if(orbitRx < 170) orbitRx = 170;
-    if(orbitRx > 400) orbitRx = 400;
-    orbitRy = orbitRx * 0.38;
+  function anim(id,prop,val){ var el=document.getElementById(id); if(el) el.style[prop]=val; }
+  function corners(op){ document.querySelectorAll('.corner').forEach(function(c){ c.style.opacity=op; }); }
+
+  function showLine(i){
+    var el=document.getElementById('sl'+i);
+    if(!el) return;
+    el.style.transition='opacity .3s, transform .3s';
+    el.style.opacity='1';
+    el.style.transform='translateX(0)';
   }
 
-  function initOrbit(){
-    calcR();
-    for(var i = 0; i < tools.length; i++){
-      (function(i){
-        var t = tools[i];
-        var el = document.createElement('div');
-        el.className = 'tool-card ' + t.cls;
-        el.innerHTML = '<span class="card-icon">' + t.icon + '</span>'
-          + '<div class="card-name">' + t.name + '</div>'
-          + '<div class="card-tag">' + t.tag + '</div>'
-          + '<div class="card-detail">' + t.desc + '<div class="card-enter">点击进入 →</div></div>';
+  function typeText(id, text, i){
+    var el=document.getElementById(id);
+    if(!el||i>text.length) return;
+    el.textContent=text.substring(0,i);
+    setTimeout(function(){ typeText(id,text,i+1); }, 60);
+  }
 
-        el.addEventListener('mouseenter', function(){ hovIdx = i; paused = true; });
-        el.addEventListener('mouseleave', function(){ hovIdx = -1; paused = false; });
-        el.addEventListener('click', function(){
-          var fl = document.createElement('div');
-          fl.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(180,210,255,.12),transparent 70%);transition:opacity .6s';
-          document.body.appendChild(fl);
-          setTimeout(function(){ fl.style.opacity = '0'; }, 50);
-          setTimeout(function(){ location.href = t.href; }, 400);
-        });
-        el.addEventListener('touchend', function(e){ e.preventDefault(); location.href = t.href; }, {passive: false});
-
-        orbitEl.appendChild(el);
-        cardEls.push(el);
-      })(i);
+  function fillBar(fillId, pctId, target, duration){
+    var fill=document.getElementById(fillId), pct=document.getElementById(pctId);
+    if(!fill||!pct) return;
+    fill.style.width=target+'%';
+    var start=performance.now(), startVal=0;
+    function tick(now){
+      var p=Math.min((now-start)/duration,1);
+      var v=Math.round(startVal+(target-startVal)*p);
+      pct.textContent=v+'%';
+      if(p<1) requestAnimationFrame(tick);
     }
-    tickOrbit();
+    requestAnimationFrame(tick);
   }
 
-  function tickOrbit(){
-    requestAnimationFrame(tickOrbit);
-    if(!paused) angle += SPEED;
-    var n = tools.length;
-    for(var i = 0; i < n; i++){
-      var el = cardEls[i];
-      var a = angle + (i / n) * 6.28;
-      var x = Math.cos(a) * orbitRx;
-      var y = Math.sin(a) * orbitRy;
-      var depth = (Math.sin(a) + 1) / 2;
-      var sc = 0.6 + 0.44 * depth;
-      var z = Math.round(depth * 80);
-      var op = 0.4 + 0.6 * depth;
-
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-
-      if(hovIdx === i){
-        el.style.zIndex = '300';
-        el.style.opacity = '1';
-        el.style.transform = 'translate(-50%,-50%) scale(1)';
-      } else {
-        el.style.zIndex = z;
-        el.style.opacity = op.toFixed(2);
-        el.style.transform = 'translate(-50%,-50%) scale(' + sc.toFixed(3) + ')';
-      }
-    }
+  function endBoot(){
+    if(transitioned) return;
+    transitioned=true;
+    boot.classList.add('out');
+    setTimeout(function(){
+      boot.style.display='none';
+      document.body.style.background='#050810';
+      scene.classList.add('show');
+      running=true;
+      initOrbit();
+    },1000);
   }
 
-  addEventListener('resize', calcR);
+  // click to skip
+  boot.addEventListener('click', endBoot);
+
+  // ══════ CANVAS ══════
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d'),W,H,cx,cy,stars=[],dust=[],flowP=[],running=false,gAng=0;
+  function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;cx=W/2;cy=H/2;initStars()}
+  function initStars(){stars=[];for(var i=0;i<400;i++){var b=Math.random()<.12;stars.push({x:Math.random()*W,y:Math.random()*H,r:b?1.2+Math.random()*1.6:.3+Math.random()*1,base:b?.7+Math.random()*.3:.2+Math.random()*.45,ph:Math.random()*6.28,sp:.002+Math.random()*.004,hue:Math.random()<.3?200+Math.random()*70:-1})}}
+  resize();addEventListener('resize',resize);
+
+  function drawStars(t){for(var i=0;i<stars.length;i++){var s=stars[i],a=s.base*(.55+.45*Math.sin(s.ph+t*s.sp));ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fillStyle=s.hue<0?'rgba(235,240,255,'+a.toFixed(2)+')':'hsla('+s.hue+',72%,78%,'+a.toFixed(2)+')';ctx.fill();if(s.r>1.6){var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*3.5);g.addColorStop(0,s.hue<0?'rgba(200,220,255,'+(a*.18).toFixed(3)+')':'hsla('+s.hue+',65%,72%,'+(a*.15).toFixed(3)+')');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(s.x-s.r*3.5,s.y-s.r*3.5,s.r*7,s.r*7)}}}
+
+  var dustPal=[[140,180,255],[100,200,255],[180,140,255],[200,170,255],[80,220,240]];
+  function spawnDust(){var ang=Math.random()*6.28,spd=.15+Math.random()*.6,col=dustPal[Math.floor(Math.random()*dustPal.length)];dust.push({x:cx+(Math.random()-.5)*16,y:cy+(Math.random()-.5)*10,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd*.55,r:.3+Math.random()*1.5,a:.4+Math.random()*.5,col:col,decay:.001+Math.random()*.003})}
+  function updateDrawDust(){var next=[];for(var i=0;i<dust.length;i++){var d=dust[i];d.x+=d.vx;d.y+=d.vy;var dx=d.x-cx,dy=d.y-cy,dist=Math.sqrt(dx*dx+dy*dy);if(dist>1){d.vx+=-dy/dist*.003;d.vy+=dx/dist*.003}d.vx*=.999;d.vy*=.999;d.a-=d.decay;if(d.a>0.01){next.push(d);var c=d.col;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,6.28);ctx.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+d.a.toFixed(3)+')';ctx.fill();if(d.r>1){ctx.beginPath();ctx.arc(d.x,d.y,d.r*3,0,6.28);ctx.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(d.a*.08).toFixed(3)+')';ctx.fill()}}}dust=next}
+
+  function drawGalaxy(t){gAng+=.002;var h0=ctx.createRadialGradient(cx,cy,0,cx,cy,200);h0.addColorStop(0,'rgba(110,160,255,.06)');h0.addColorStop(.3,'rgba(150,120,240,.03)');h0.addColorStop(.7,'rgba(80,180,255,.015)');h0.addColorStop(1,'transparent');ctx.fillStyle=h0;ctx.fillRect(cx-200,cy-200,400,400);ctx.save();ctx.translate(cx,cy);ctx.rotate(gAng);for(var arm=0;arm<4;arm++){ctx.save();ctx.rotate(arm*Math.PI/2);ctx.beginPath();for(var tt=0;tt<5.5;tt+=.015){var rr=6+tt*20,aa=tt*1.1;if(tt<.001)ctx.moveTo(Math.cos(aa)*rr,Math.sin(aa)*rr*.45);else ctx.lineTo(Math.cos(aa)*rr,Math.sin(aa)*rr*.45)}ctx.strokeStyle='rgba(140,180,255,.09)';ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle='rgba(190,160,255,.045)';ctx.lineWidth=6;ctx.stroke();ctx.restore()}ctx.restore();var g1=ctx.createRadialGradient(cx,cy,0,cx,cy,65);g1.addColorStop(0,'rgba(200,220,255,.22)');g1.addColorStop(.25,'rgba(140,180,255,.12)');g1.addColorStop(.6,'rgba(130,110,230,.04)');g1.addColorStop(1,'transparent');ctx.fillStyle=g1;ctx.beginPath();ctx.arc(cx,cy,65,0,6.28);ctx.fill();var pulse=.85+.15*Math.sin(t*.002);var g2=ctx.createRadialGradient(cx,cy,0,cx,cy,22*pulse);g2.addColorStop(0,'rgba(230,240,255,'+(0.55*pulse).toFixed(2)+')');g2.addColorStop(.35,'rgba(160,200,255,.25)');g2.addColorStop(1,'transparent');ctx.fillStyle=g2;ctx.beginPath();ctx.arc(cx,cy,22*pulse,0,6.28);ctx.fill();var g3=ctx.createRadialGradient(cx,cy,0,cx,cy,6);g3.addColorStop(0,'rgba(240,248,255,.85)');g3.addColorStop(1,'rgba(180,210,255,0)');ctx.fillStyle=g3;ctx.beginPath();ctx.arc(cx,cy,6,0,6.28);ctx.fill();ctx.save();ctx.translate(cx,cy);ctx.rotate(-gAng*.6);ctx.scale(1,.32);[85,110,140].forEach(function(rr,i){ctx.beginPath();ctx.arc(0,0,rr,0,6.28);ctx.strokeStyle='rgba(120,170,255,'+(0.055-0.015*i).toFixed(3)+')';ctx.lineWidth=.8;ctx.stroke()});ctx.restore();ctx.save();ctx.translate(cx,cy);ctx.rotate(gAng*.5);for(var di=0;di<40;di++){var a2=(di/40)*6.28+gAng*2,dd=20+(di%7)*12+Math.sin(a2*3)*8;ctx.beginPath();ctx.arc(Math.cos(a2)*dd,Math.sin(a2)*dd*.4,.6+Math.sin(a2+di)*.4,0,6.28);ctx.fillStyle=di%3===0?'rgba(180,140,255,'+(.15+Math.sin(a2*2+di)*.1).toFixed(2)+')':'rgba(140,190,255,'+(.15+Math.sin(a2*2+di)*.1).toFixed(2)+')';ctx.fill()}ctx.restore()}
+
+  var flowHues=[[80,170,255],[0,210,240],[160,120,250],[50,200,200],[130,180,255]];
+  function spawnFlow(){var c=flowHues[Math.floor(Math.random()*flowHues.length)],e=Math.floor(Math.random()*4),x,y,vx,vy,sp=.2+Math.random()*.5;if(e===0){x=Math.random()*W;y=-4;vx=(Math.random()-.5)*.4;vy=sp}else if(e===1){x=W+4;y=Math.random()*H;vx=-sp;vy=(Math.random()-.5)*.4}else if(e===2){x=Math.random()*W;y=H+4;vx=(Math.random()-.5)*.4;vy=-sp}else{x=-4;y=Math.random()*H;vx=sp;vy=(Math.random()-.5)*.4}flowP.push({x:x,y:y,vx:vx,vy:vy,r:.4+Math.random()*1.4,a:.25+Math.random()*.4,c:c,decay:.001+Math.random()*.002})}
+  function updateDrawFlow(){var next=[];for(var i=0;i<flowP.length;i++){var p=flowP[i];p.x+=p.vx;p.y+=p.vy;p.vx+=(Math.random()-.5)*.012;p.vy+=(Math.random()-.5)*.012;p.a-=p.decay;if(p.a>0.01&&p.x>-50&&p.x<W+50&&p.y>-50&&p.y<H+50){next.push(p);var c=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+p.a.toFixed(3)+')';ctx.fill();if(p.r>1){ctx.beginPath();ctx.arc(p.x,p.y,p.r*2.5,0,6.28);ctx.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(p.a*.06).toFixed(3)+')';ctx.fill()}}}flowP=next}
+  function drawGrid(){ctx.strokeStyle='rgba(60,100,180,.025)';ctx.lineWidth=.5;var g=64;for(var x=0;x<W;x+=g){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(var y=0;y<H;y+=g){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}}
+  function drawVignette(){var vg=ctx.createRadialGradient(cx,cy,Math.min(W,H)*.3,cx,cy,Math.max(W,H)*.75);vg.addColorStop(0,'transparent');vg.addColorStop(1,'rgba(3,5,12,.45)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H)}
+
+  var t0=performance.now();
+  function render(ts){requestAnimationFrame(render);if(!running)return;var t=ts-t0;ctx.fillStyle='#050810';ctx.fillRect(0,0,W,H);drawGrid();drawStars(t);if(dust.length<200&&Math.random()<.35)spawnDust();if(dust.length<200&&Math.random()<.2)spawnDust();updateDrawDust();drawGalaxy(t);if(flowP.length<90&&Math.random()<.2)spawnFlow();updateDrawFlow();drawVignette()}
+  requestAnimationFrame(render);
+
+  // ══════ ORBIT ══════
+  var tools=[
+    {name:'德育仪表盘',icon:'\u{1F3EB}',href:'./Edu-visual/index.html',cls:'tc1',tag:'德育管理',desc:'学生德育数据可视化管理，多维度行为评估与班级成长追踪。'},
+    {name:'论文降重润色平台',icon:'\u{270D}\u{FE0F}',href:'./aigc_optimizer_v3/index.html',cls:'tc2',tag:'AIGC 写作',desc:'AI 驱动学术写作优化工具，智能降重检测与语义润色一体化。'},
+    {name:'安阳学区学业质量<br>检测分析看板',icon:'\u{1F4CA}',href:'./chengji/index.html',cls:'tc3',tag:'成绩分析',desc:'期末成绩多维可视化分析，支持学校横向对比与班级下钻。'},
+    {name:'小学数学错题训练器',icon:'\u{1F9EE}',href:'./cuoti/index.html',cls:'tc4',tag:'错题训练',desc:'智能错题归类与针对性训练，帮助学生精准突破薄弱知识点。'},
+    {name:'学业监测数据<br>可视化分析平台',icon:'\u{1F4C8}',href:'./jiance/index.html',cls:'tc5',tag:'监测分析',desc:'区域监测数据多维聚合，能力雷达图与趋势分析追踪。'},
+    {name:'MD 格式转化器',icon:'\u{1F4DD}',href:'./md/index.html',cls:'tc6',tag:'文档工具',desc:'Markdown 文档在线转换与格式化，支持多种导出方式。'},
+    {name:'校内单门学科<br>质量分析平台',icon:'\u{1F52C}',href:'./xuqing/index.html',cls:'tc7',tag:'学科诊断',desc:'单科成绩深度解析，知识点诊断与个性化教学改进建议。'}
+  ];
+  var orbitEl=document.getElementById('orbit'),cardEls=[],orbitRx,orbitRy,angle=0,SPEED=0.005,hovIdx=-1,paused=false;
+  function calcR(){orbitRx=Math.min(W,H)*.38;if(orbitRx<170)orbitRx=170;if(orbitRx>400)orbitRx=400;orbitRy=orbitRx*.38}
+  function initOrbit(){calcR();for(var i=0;i<tools.length;i++){(function(i){var t=tools[i],el=document.createElement('div');el.className='tool-card '+t.cls;el.innerHTML='<span class="card-icon">'+t.icon+'</span><div class="card-name">'+t.name+'</div><div class="card-tag">'+t.tag+'</div><div class="card-detail">'+t.desc+'<div class="card-enter">点击进入 →</div></div>';el.addEventListener('mouseenter',function(){hovIdx=i;paused=true});el.addEventListener('mouseleave',function(){hovIdx=-1;paused=false});el.addEventListener('click',function(){var fl=document.createElement('div');fl.style.cssText='position:fixed;inset:0;z-index:9999;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(180,210,255,.12),transparent 70%);transition:opacity .6s';document.body.appendChild(fl);setTimeout(function(){fl.style.opacity='0'},50);setTimeout(function(){location.href=t.href},400)});el.addEventListener('touchend',function(e){e.preventDefault();location.href=t.href},{passive:false});orbitEl.appendChild(el);cardEls.push(el)})(i)}tickOrbit()}
+  function tickOrbit(){requestAnimationFrame(tickOrbit);if(!paused)angle+=SPEED;var n=tools.length;for(var i=0;i<n;i++){var el=cardEls[i],a=angle+(i/n)*6.28,x=Math.cos(a)*orbitRx,y=Math.sin(a)*orbitRy,depth=(Math.sin(a)+1)/2,sc=.6+.44*depth,z=Math.round(depth*80),op=.4+.6*depth;el.style.left=x+'px';el.style.top=y+'px';if(hovIdx===i){el.style.zIndex='300';el.style.opacity='1';el.style.transform='translate(-50%,-50%) scale(1)'}else{el.style.zIndex=z;el.style.opacity=op.toFixed(2);el.style.transform='translate(-50%,-50%) scale('+sc.toFixed(3)+')'}}}
+  addEventListener('resize',calcR);
 })();
 </script>
 </body>
